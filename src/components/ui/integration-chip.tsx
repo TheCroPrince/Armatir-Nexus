@@ -1,3 +1,4 @@
+import { createElement } from 'react'
 import { cn } from '@/lib/cn'
 import { integrationsById } from '@/data/nexus'
 import { getNexusIcon } from '@/types/nexus-icons'
@@ -19,8 +20,11 @@ const sizes = {
 export function IntegrationChip({ id, size = 'md', showLabel = false, className }: IntegrationChipProps) {
   const integration = integrationsById[id]
   if (!integration) return null
-  const Icon = getNexusIcon(integration.icon)
   const dims = sizes[size]
+  const icon = createElement(getNexusIcon(integration.icon), {
+    className: cn(dims.icon, 'text-white drop-shadow-[0_1px_1px_oklch(0%_0_0_/_0.25)]'),
+    strokeWidth: 2.2,
+  })
 
   return (
     <span
@@ -41,10 +45,7 @@ export function IntegrationChip({ id, size = 'md', showLabel = false, className 
         }}
         title={integration.name}
       >
-        <Icon
-          className={cn(dims.icon, 'text-white drop-shadow-[0_1px_1px_oklch(0%_0_0_/_0.25)]')}
-          strokeWidth={2.2}
-        />
+        {icon}
       </span>
       {showLabel && (
         <span className="text-[12.5px] font-medium text-[var(--color-ink)]">{integration.name}</span>

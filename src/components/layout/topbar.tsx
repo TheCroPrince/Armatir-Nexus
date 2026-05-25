@@ -5,11 +5,12 @@ import { cn } from '@/lib/cn'
 interface TopbarProps {
   onOpenPalette: () => void
   onToggleNotifications: () => void
+  onAskNexus: () => void
   notificationsOpen: boolean
   unreadCount: number
 }
 
-export function Topbar({ onOpenPalette, onToggleNotifications, notificationsOpen, unreadCount }: TopbarProps) {
+export function Topbar({ onOpenPalette, onToggleNotifications, onAskNexus, notificationsOpen, unreadCount }: TopbarProps) {
   return (
     <header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b border-[var(--color-hairline-soft)] bg-[oklch(98%_0.015_290_/_0.6)] px-3 backdrop-blur-xl md:px-5">
 
@@ -52,6 +53,7 @@ export function Topbar({ onOpenPalette, onToggleNotifications, notificationsOpen
 
       {/* Quick action — AI ask */}
       <button
+        onClick={onAskNexus}
         className="hidden lg:flex items-center gap-1.5 rounded-full bg-gradient-to-br from-[oklch(60%_0.22_295)] to-[oklch(55%_0.20_260)] px-3 py-1.5 text-[12px] font-medium text-white shadow-[0_8px_24px_oklch(55%_0.20_280_/_0.3)] transition-transform hover:scale-[1.02] active:scale-[0.98]"
       >
         <Sparkles className="h-3.5 w-3.5" strokeWidth={2} />

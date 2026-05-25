@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Plus, Search, Clock, Activity as ActivityIcon, ChevronRight, Play, Pause, MoreHorizontal } from 'lucide-react'
-import { nexusWorkflows, workflowsById } from '@/data/nexus'
+import { integrationsById, nexusWorkflows } from '@/data/nexus'
 import { StatusPill } from '@/components/ui/status-pill'
 import { IntegrationCluster, IntegrationChip } from '@/components/ui/integration-chip'
 import { Sparkline } from '@/components/ui/sparkline'
@@ -12,9 +12,11 @@ import { cn } from '@/lib/cn'
 export function WorkflowsPage() {
   const [params, setParams] = useSearchParams()
   const initial = params.get('w') ?? nexusWorkflows[0]!.id
+  const [workflows, setWorkflows] = useState<NexusWorkflow[]>(nexusWorkflows)
   const [selectedId, setSelectedId] = useState<string>(initial)
   const [query, setQuery] = useState('')
   const [filter, setFilter] = useState<'all' | NexusWorkflow['status']>('all')
+  const [notice, setNotice] = useState<string | null>(null)
 
   // Keep URL in sync with selection so the command palette can deep-link.
   useEffect(() => {
@@ -27,29 +29,55 @@ export function WorkflowsPage() {
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
-    return nexusWorkflows.filter((w) => {
+    return workflows.filter((w) => {
       if (filter !== 'all' && w.status !== filter) return false
       if (!q) return true
       return [w.name, w.description, w.impact].some((s) => s.toLowerCase().includes(q))
     })
-  }, [query, filter])
+  }, [query, filter, workflows])
 
-  const selected = workflowsById[selectedId] ?? nexusWorkflows[0]!
+  const selected = workflows.find((w) => w.id === selectedId) ?? workflows[0]!
+  const runningCount = workflows.filter((w) => w.status === 'running').length
+  const reviewCount = workflows.filter((w) => w.status === 'review').length
+
+  function announce(message: string) {
+    setNotice(message)
+    window.setTimeout(() => setNotice(null), 2600)
+  }
+
+  function toggleSelectedWorkflow() {
+    setWorkflows((current) => current.map((workflow) => {
+      if (workflow.id !== selected.id) return workflow
+      const isRunning = workflow.status === 'running'
+      return {
+        ...workflow,
+        status: isRunning ? 'paused' : 'running',
+        lastRun: isRunning ? workflow.lastRun : 'just now',
+        runsThisMonth: isRunning ? workflow.runsThisMonth : workflow.runsThisMonth + 1,
+      }
+    }))
+    announce(selected.status === 'running'
+      ? `${selected.name} paused`
+      : `${selected.name} queued and running now`)
+  }
 
   return (
-    <div className="grid h-[calc(100dvh-56px)] grid-cols-1 gap-0 lg:grid-cols-[minmax(360px,440px)_1fr]">
+    <div className="grid min-h-[calc(100dvh-56px)] grid-cols-1 gap-0 lg:h-[calc(100dvh-56px)] lg:grid-cols-[minmax(360px,440px)_1fr]">
       {/* ── List column ────────────────────────────────────────── */}
-      <div className="flex h-full flex-col border-r border-[var(--color-hairline-soft)]">
+      <div className="flex max-h-[46dvh] flex-col border-b border-[var(--color-hairline-soft)] lg:max-h-none lg:border-b-0 lg:border-r">
         <div className="flex items-center justify-between gap-2 px-5 pb-2 pt-6">
           <div>
             <h1 className="text-[19px] font-semibold tracking-tight text-[var(--color-ink)]">
               Workflows
             </h1>
             <p className="mt-0.5 text-[11.5px] text-[var(--color-ink-faint)]">
-              8 enabled · 3 running · 1 needs review
+              {workflows.length} enabled · {runningCount} running · {reviewCount} needs review
             </p>
           </div>
-          <button className="flex items-center gap-1 rounded-full bg-[var(--color-ink)] px-2.5 py-1.5 text-[11.5px] font-medium text-white shadow-[var(--shadow-card)]">
+          <button
+            onClick={() => announce('New workflow draft created')}
+            className="flex items-center gap-1 rounded-full bg-[var(--color-ink)] px-2.5 py-1.5 text-[11.5px] font-medium text-white shadow-[var(--shadow-card)]"
+          >
             <Plus className="h-3 w-3" strokeWidth={2.2} /> New
           </button>
         </div>
@@ -70,7 +98,7 @@ export function WorkflowsPage() {
 
         {/* Filter pills */}
         <div className="flex flex-wrap items-center gap-1.5 px-5 pb-3">
-          {(['all', 'running', 'ready', 'review', 'synced'] as const).map((f) => (
+          {(['all', 'running', 'ready', 'review', 'synced', 'paused'] as const).map((f) => (
             <button
               key={f}
               onClick={() => setFilter(f)}
@@ -140,7 +168,11 @@ export function WorkflowsPage() {
             transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
             className="flex flex-col gap-5 px-6 py-7 lg:px-8"
           >
-            <DetailHeader workflow={selected} />
+            <DetailHeader
+              workflow={selected}
+              onToggle={toggleSelectedWorkflow}
+              onMenu={() => announce('Workflow actions opened')}
+            />
             <DetailFlow workflow={selected} />
             <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
               <DetailMeta workflow={selected} />
@@ -149,13 +181,34 @@ export function WorkflowsPage() {
           </motion.div>
         </AnimatePresence>
       </div>
+      <AnimatePresence>
+        {notice && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 10 }}
+            className="fixed bottom-5 right-5 z-40 rounded-full bg-[var(--color-ink)] px-4 py-2 text-[12px] font-medium text-white shadow-[var(--shadow-pop)]"
+            role="status"
+          >
+            {notice}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }
 
 // ─── Detail panel sub-components ─────────────────────────────────────────────
 
-function DetailHeader({ workflow }: { workflow: NexusWorkflow }) {
+function DetailHeader({
+  workflow,
+  onToggle,
+  onMenu,
+}: {
+  workflow: NexusWorkflow
+  onToggle: () => void
+  onMenu: () => void
+}) {
   const isRunning = workflow.status === 'running'
   return (
     <div className="flex flex-col gap-4">
@@ -179,10 +232,11 @@ function DetailHeader({ workflow }: { workflow: NexusWorkflow }) {
         </div>
 
         <div className="flex items-center gap-1.5">
-          <button className="pill !py-1.5">
+          <button className="pill !py-1.5" onClick={onMenu} aria-label="Open workflow actions">
             <MoreHorizontal className="h-3.5 w-3.5" strokeWidth={1.8} />
           </button>
           <button
+            onClick={onToggle}
             className={cn(
               'flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[12px] font-medium shadow-[var(--shadow-card)] transition-transform hover:scale-[1.02] active:scale-[0.98]',
               isRunning
@@ -257,7 +311,7 @@ function DetailFlow({ workflow }: { workflow: NexusWorkflow }) {
                 {integration && (
                   <div className="mt-1 flex items-center gap-1.5 text-[10.5px] text-[var(--color-ink-faint)]">
                     <IntegrationChip id={integration.id} size="sm" />
-                    <span>via {workflow.integrations[i]?.id ? (workflow.integrations[i]!.id) : ''}</span>
+                    <span>via {integrationsById[integration.id]?.name ?? integration.id}</span>
                   </div>
                 )}
               </div>
@@ -281,7 +335,9 @@ function DetailMeta({ workflow }: { workflow: NexusWorkflow }) {
           <li key={i.id} className="flex items-center gap-3">
             <IntegrationChip id={i.id} size="lg" />
             <div className="flex-1 min-w-0">
-              <div className="text-[13px] font-medium text-[var(--color-ink)] capitalize">{i.id}</div>
+              <div className="text-[13px] font-medium text-[var(--color-ink)]">
+                {integrationsById[i.id]?.name ?? i.id}
+              </div>
               <div className="text-[10.5px] text-[var(--color-ink-faint)]">Active connection · OAuth · scoped</div>
             </div>
             <span className="status-pill text-[oklch(38%_0.10_165)] bg-[oklch(94%_0.05_165)]">

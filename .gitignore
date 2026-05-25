@@ -47,6 +47,9 @@ Thumbs.db
 !.vscode/extensions.json
 .idea/
 
+# Session continuity — local only, not for GitHub
+handoff.md
+
 # AI agent tooling — keep GitHub free of AI-tool footprints.
 # (Exception: a repo that intentionally ships one of these as a feature.)
 .claude/

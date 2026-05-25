@@ -1,7 +1,8 @@
 import { useState } from 'react'
+import { createElement } from 'react'
 import { motion } from 'framer-motion'
 import { Check, Loader2, AlertCircle, Plus } from 'lucide-react'
-import { nexusIntegrations, integrationsById } from '@/data/nexus'
+import { nexusIntegrations, integrationsById, nexusWorkflows } from '@/data/nexus'
 import { getNexusIcon } from '@/types/nexus-icons'
 import type { IntegrationCategory } from '@/types/nexus'
 import { cn } from '@/lib/cn'
@@ -20,6 +21,15 @@ const clusterOrder: IntegrationCategory[] = ['ai', 'communication', 'crm', 'prod
 
 export function IntegrationsPage() {
   const [hovered, setHovered] = useState<string | null>(null)
+  const [selectedId, setSelectedId] = useState<string>(nexusIntegrations[0]!.id)
+  const selected = integrationsById[hovered ?? selectedId] ?? nexusIntegrations[0]!
+  const selectedIcon = createElement(getNexusIcon(selected.icon), {
+    className: 'h-5 w-5 text-white',
+    strokeWidth: 2.2,
+  })
+  const relatedWorkflows = nexusWorkflows.filter((workflow) =>
+    workflow.integrations.some((integration) => integration.id === selected.id),
+  )
 
   const grouped = clusterOrder.map((cat) => ({
     category: cat,
@@ -56,7 +66,7 @@ export function IntegrationsPage() {
       {/* Ecosystem viz — clustered orbit, not a grid */}
       <div className="glass relative overflow-hidden rounded-2xl px-6 py-8 md:px-10 md:py-12 lg:py-16">
         {/* Connection lines */}
-        <ConnectionLines hovered={hovered} />
+        <ConnectionLines hovered={hovered ?? selectedId} />
 
         <div className="relative z-10 grid grid-cols-1 gap-x-6 gap-y-10 md:grid-cols-3 lg:grid-cols-6">
           {grouped.map((group, idx) => (
@@ -78,15 +88,19 @@ export function IntegrationsPage() {
                       data-int-id={i.id}
                       onMouseEnter={() => setHovered(i.id)}
                       onMouseLeave={() => setHovered(null)}
+                      onFocus={() => setHovered(i.id)}
+                      onBlur={() => setHovered(null)}
+                      onClick={() => setSelectedId(i.id)}
                       whileHover={{ y: -3 }}
                       transition={{ type: 'spring', stiffness: 400, damping: 22 }}
                       className={cn(
                         'group relative flex h-14 w-14 items-center justify-center rounded-2xl bg-white/90 transition-shadow',
-                        isHovered
+                        isHovered || selectedId === i.id
                           ? 'shadow-[0_0_0_3px_oklch(100%_0_0),0_18px_40px_oklch(45%_0.10_280_/_0.18)]'
                           : 'shadow-[var(--shadow-card),inset_0_0_0_1px_oklch(100%_0_0_/_0.7)]',
                       )}
                       title={i.name}
+                      aria-label={`Select ${i.name} integration`}
                     >
                       <span
                         className="absolute inset-0 -z-10 rounded-2xl opacity-30 blur-md transition-opacity group-hover:opacity-70"
@@ -129,7 +143,81 @@ export function IntegrationsPage() {
 
         {/* Bottom hint */}
         <div className="relative z-10 mt-8 flex items-center justify-center gap-2 text-[11.5px] text-[var(--color-ink-faint)]">
-          <span>Hover an integration to see its connections.</span>
+          <span>Select an integration to inspect its workflows, scopes, and sync health.</span>
+        </div>
+      </div>
+
+      {/* Operational detail */}
+      <div className="grid grid-cols-1 gap-3 lg:grid-cols-[0.85fr_1.15fr]">
+        <div className="glass rounded-2xl p-5">
+          <div className="flex items-start gap-3">
+            <span
+              className="relative inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl"
+              style={{
+                background: `linear-gradient(135deg, ${selected.accent}, oklch(98% 0.01 280))`,
+                boxShadow: `inset 0 0 0 1px oklch(100% 0 0 / 0.55), 0 8px 20px ${selected.accent.replace(')', ' / 0.25)')}`,
+              }}
+            >
+              {selectedIcon}
+            </span>
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2">
+                <h2 className="text-[16px] font-semibold tracking-tight text-[var(--color-ink)]">{selected.name}</h2>
+                <span className={cn(
+                  'status-pill',
+                  selected.status === 'connected' && 'text-[oklch(38%_0.10_165)] bg-[oklch(94%_0.05_165)]',
+                  selected.status === 'syncing' && 'text-[oklch(40%_0.12_70)] bg-[oklch(95%_0.06_75)]',
+                  selected.status === 'attention' && 'text-[oklch(42%_0.16_25)] bg-[oklch(95%_0.04_25)]',
+                )}>
+                  <span className={cn(
+                    selected.status === 'connected' && 'bg-[var(--color-mint)]',
+                    selected.status === 'syncing' && 'bg-[var(--color-amber)]',
+                    selected.status === 'attention' && 'bg-[var(--color-rose)]',
+                  )} />
+                  {selected.status}
+                </span>
+              </div>
+              <p className="mt-1 text-[12.5px] leading-relaxed text-[var(--color-ink-soft)]">
+                {selected.activeWorkflows} active workflows use this connection. Last sync completed {selected.status === 'syncing' ? '42s ago and is retrying deltas' : '3m ago'}.
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-4 grid grid-cols-3 gap-2 border-t border-[var(--color-hairline-soft)] pt-4">
+            <div>
+              <div className="text-[10.5px] text-[var(--color-ink-faint)]">Category</div>
+              <div className="mt-0.5 text-[12.5px] font-medium capitalize text-[var(--color-ink)]">{selected.category}</div>
+            </div>
+            <div>
+              <div className="text-[10.5px] text-[var(--color-ink-faint)]">Scope</div>
+              <div className="mt-0.5 text-[12.5px] font-medium text-[var(--color-ink)]">Least privilege</div>
+            </div>
+            <div>
+              <div className="text-[10.5px] text-[var(--color-ink-faint)]">Events</div>
+              <div className="mt-0.5 font-mono text-[12.5px] font-medium text-[var(--color-ink)]">{selected.activeWorkflows * 37}/hr</div>
+            </div>
+          </div>
+        </div>
+
+        <div className="glass rounded-2xl p-5">
+          <div className="mb-3 flex items-center justify-between">
+            <div>
+              <div className="text-[13px] font-medium text-[var(--color-ink)]">Workflows using {selected.name}</div>
+              <div className="text-[10.5px] text-[var(--color-ink-faint)]">Click another integration to inspect its local impact.</div>
+            </div>
+            <span className="font-mono text-[10.5px] text-[var(--color-ink-faint)]">{relatedWorkflows.length} linked</span>
+          </div>
+          <ul className="grid grid-cols-1 gap-2 md:grid-cols-2">
+            {relatedWorkflows.map((workflow) => (
+              <li key={workflow.id} className="rounded-xl border border-[var(--color-hairline-soft)] bg-white/50 px-3 py-2.5">
+                <div className="flex items-center gap-2">
+                  <span className="h-1.5 w-1.5 rounded-full bg-[var(--color-mint)]" />
+                  <span className="line-clamp-1 text-[12.5px] font-medium text-[var(--color-ink)]">{workflow.name}</span>
+                </div>
+                <div className="mt-1 text-[11px] text-[var(--color-ink-faint)]">{workflow.impact}</div>
+              </li>
+            ))}
+          </ul>
         </div>
       </div>
 
@@ -162,8 +250,17 @@ export function IntegrationsPage() {
                   {i.activeWorkflows} {i.activeWorkflows === 1 ? 'workflow' : 'workflows'}
                 </div>
               </div>
-              <span className="status-pill text-[oklch(38%_0.10_165)] bg-[oklch(94%_0.05_165)]">
-                <span className="bg-[var(--color-mint)]" />
+              <span className={cn(
+                'status-pill',
+                i.status === 'connected' && 'text-[oklch(38%_0.10_165)] bg-[oklch(94%_0.05_165)]',
+                i.status === 'syncing' && 'text-[oklch(40%_0.12_70)] bg-[oklch(95%_0.06_75)]',
+                i.status === 'attention' && 'text-[oklch(42%_0.16_25)] bg-[oklch(95%_0.04_25)]',
+              )}>
+                <span className={cn(
+                  i.status === 'connected' && 'bg-[var(--color-mint)]',
+                  i.status === 'syncing' && 'bg-[var(--color-amber)]',
+                  i.status === 'attention' && 'bg-[var(--color-rose)]',
+                )} />
               </span>
             </div>
           </motion.div>

@@ -23,15 +23,36 @@ type Command = {
 export function CommandPalette({ open, onClose }: CommandPaletteProps) {
   const navigate = useNavigate()
   const inputRef = useRef<HTMLInputElement>(null)
+  const restoreFocusRef = useRef<HTMLElement | null>(null)
   const [query, setQuery] = useState('')
   const [selected, setSelected] = useState(0)
 
   useEffect(() => {
     if (open) {
-      setQuery('')
-      setSelected(0)
-      setTimeout(() => inputRef.current?.focus(), 60)
+      restoreFocusRef.current = document.activeElement instanceof HTMLElement
+        ? document.activeElement
+        : null
+      const id = setTimeout(() => {
+        setQuery('')
+        setSelected(0)
+        inputRef.current?.focus()
+      }, 60)
+      return () => clearTimeout(id)
     }
+    restoreFocusRef.current?.focus()
+    restoreFocusRef.current = null
+  }, [open])
+
+  useEffect(() => {
+    if (!open) return
+    function keepFocus(e: FocusEvent) {
+      const target = e.target as Node | null
+      if (!target) return
+      const panel = inputRef.current?.closest('[role="dialog"]')
+      if (panel && !panel.contains(target)) inputRef.current?.focus()
+    }
+    document.addEventListener('focusin', keepFocus)
+    return () => document.removeEventListener('focusin', keepFocus)
   }, [open])
 
   const commands: Command[] = useMemo(() => {
@@ -84,24 +105,30 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
     return groups
   }, [filtered])
 
+  const safeSelected = Math.min(selected, Math.max(filtered.length - 1, 0))
+  const activeCommand = filtered[safeSelected]
+
   // Keyboard handling
   useEffect(() => {
     if (!open) return
     function onKey(e: KeyboardEvent) {
       if (e.key === 'ArrowDown') {
         e.preventDefault()
-        setSelected((s) => Math.min(s + 1, filtered.length - 1))
+        setSelected((s) => Math.min(s + 1, Math.max(filtered.length - 1, 0)))
       } else if (e.key === 'ArrowUp') {
         e.preventDefault()
         setSelected((s) => Math.max(s - 1, 0))
       } else if (e.key === 'Enter') {
         e.preventDefault()
-        filtered[selected]?.action()
+        filtered[safeSelected]?.action()
+      } else if (e.key === 'Tab') {
+        e.preventDefault()
+        inputRef.current?.focus()
       }
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [open, filtered, selected])
+  }, [open, filtered, safeSelected])
 
   return (
     <AnimatePresence>
@@ -124,6 +151,9 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
             exit={{    opacity: 0, scale: 0.97, y: -6 }}
             transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
             className="glass-strong relative z-10 w-full max-w-[580px] overflow-hidden rounded-2xl"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Command palette"
           >
             <div className="flex items-center gap-2.5 border-b border-[var(--color-hairline-soft)] px-4 py-3">
               <Search className="h-4 w-4 text-[var(--color-ink-faint)]" />
@@ -133,11 +163,15 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
                 onChange={(e) => { setQuery(e.target.value); setSelected(0) }}
                 placeholder="Search or run a command…"
                 className="flex-1 bg-transparent text-[14px] text-[var(--color-ink)] outline-none placeholder:text-[var(--color-ink-ghost)]"
+                role="combobox"
+                aria-expanded="true"
+                aria-controls="command-palette-results"
+                aria-activedescendant={activeCommand ? `command-${activeCommand.id}` : undefined}
               />
               <kbd>esc</kbd>
             </div>
 
-            <div className="max-h-[55vh] overflow-y-auto p-2">
+            <div id="command-palette-results" className="max-h-[55vh] overflow-y-auto p-2" role="listbox" aria-label="Command results">
               {Object.entries(grouped).map(([group, items]) => (
                 <div key={group} className="mb-2 last:mb-0">
                   <div className="mono-label px-2 pb-1 pt-1">{group}</div>
@@ -147,6 +181,9 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
                     return (
                       <button
                         key={cmd.id}
+                        id={`command-${cmd.id}`}
+                        role="option"
+                        aria-selected={isActive}
                         onMouseEnter={() => setSelected(globalIdx)}
                         onClick={cmd.action}
                         className={cn(

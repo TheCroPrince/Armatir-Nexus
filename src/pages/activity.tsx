@@ -1,9 +1,11 @@
 import { useState } from 'react'
 import { Radio, Search, Filter } from 'lucide-react'
 import { ActivityFeed } from '@/components/overview/activity-feed'
+import type { ActivityStatus } from '@/types/nexus'
 import { cn } from '@/lib/cn'
 
 type Filter = 'all' | 'success' | 'info' | 'warning' | 'ai'
+type Range = 'today' | '15m'
 
 const filterLabels: Record<Filter, string> = {
   all:     'All',
@@ -16,6 +18,9 @@ const filterLabels: Record<Filter, string> = {
 export function ActivityPage() {
   const [filter, setFilter] = useState<Filter>('all')
   const [query, setQuery] = useState('')
+  const [range, setRange] = useState<Range>('today')
+  const statusFilter: ActivityStatus | 'all' = filter
+  const sinceMs = range === '15m' ? 15 * 60_000 : 24 * 60 * 60_000
 
   return (
     <div className="flex flex-col gap-5 px-5 py-6 md:px-7 md:py-7 lg:px-10 lg:py-8">
@@ -43,8 +48,12 @@ export function ActivityPage() {
               className="w-44 bg-transparent text-[12px] text-[var(--color-ink)] outline-none placeholder:text-[var(--color-ink-ghost)]"
             />
           </label>
-          <button className="pill !py-1.5">
-            <Filter className="h-3 w-3" /> Today
+          <button
+            onClick={() => setRange((current) => current === 'today' ? '15m' : 'today')}
+            className="pill !py-1.5"
+            aria-label={`Activity range: ${range === 'today' ? 'Today' : 'Last 15 minutes'}`}
+          >
+            <Filter className="h-3 w-3" /> {range === 'today' ? 'Today' : 'Last 15m'}
           </button>
         </div>
       </div>
@@ -71,7 +80,13 @@ export function ActivityPage() {
       </div>
 
       {/* Stream */}
-      <ActivityFeed limit={24} className="min-h-[60vh]" />
+      <ActivityFeed
+        limit={24}
+        className="min-h-[60vh]"
+        query={query}
+        sinceMs={sinceMs}
+        statusFilter={statusFilter}
+      />
     </div>
   )
 }

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Radio } from 'lucide-react'
 import { nexusActivityPool, nexusActivitySeed, integrationsById } from '@/data/nexus'
@@ -19,11 +19,22 @@ interface ActivityFeedProps {
   limit?: number
   className?: string
   showHeader?: boolean
+  statusFilter?: ActivityStatus | 'all'
+  query?: string
+  sinceMs?: number
 }
 
-export function ActivityFeed({ limit = 9, className, showHeader = true }: ActivityFeedProps) {
+export function ActivityFeed({
+  limit = 9,
+  className,
+  showHeader = true,
+  statusFilter = 'all',
+  query = '',
+  sinceMs,
+}: ActivityFeedProps) {
   const [events, setEvents] = useState<NexusActivityEvent[]>(nexusActivitySeed)
   const [tick, setTick] = useState(0)
+  const [now, setNow] = useState(() => Date.now())
   const counter = useRef(events.length)
 
   // Prepend new events on a 3.4–5.8s irregular cadence so it never feels mechanical.
@@ -49,9 +60,29 @@ export function ActivityFeed({ limit = 9, className, showHeader = true }: Activi
 
   // Re-render every 12s so relative timestamps stay fresh without driving heavy work.
   useEffect(() => {
-    const id = setInterval(() => setTick((t) => t + 1), 12_000)
+    const id = setInterval(() => {
+      setTick((t) => t + 1)
+      setNow(Date.now())
+    }, 12_000)
     return () => clearInterval(id)
   }, [])
+
+  const visibleEvents = useMemo(() => {
+    const q = query.trim().toLowerCase()
+    const cutoff = sinceMs ? now - sinceMs : null
+    return events.filter((event) => {
+      if (statusFilter !== 'all' && event.status !== statusFilter) return false
+      if (cutoff && new Date(event.timestamp).getTime() < cutoff) return false
+      if (!q) return true
+      const integration = integrationsById[event.source]
+      return [
+        event.message,
+        event.source,
+        event.workflowId,
+        integration?.name,
+      ].filter(Boolean).some((value) => value!.toLowerCase().includes(q))
+    })
+  }, [events, now, query, sinceMs, statusFilter])
 
   return (
     <div className={cn('glass relative flex flex-col overflow-hidden rounded-2xl', className)}>
@@ -75,7 +106,7 @@ export function ActivityFeed({ limit = 9, className, showHeader = true }: Activi
 
       <div className="relative flex-1">
         <AnimatePresence initial={false}>
-          {events.slice(0, limit).map((e) => {
+          {visibleEvents.slice(0, limit).map((e) => {
             const integration = integrationsById[e.source]
             const Icon = integration ? getNexusIcon(integration.icon) : null
             const s = statusStyle[e.status]
@@ -124,6 +155,11 @@ export function ActivityFeed({ limit = 9, className, showHeader = true }: Activi
             )
           })}
         </AnimatePresence>
+        {visibleEvents.length === 0 && (
+          <div className="flex min-h-[220px] items-center justify-center px-6 text-center text-[13px] text-[var(--color-ink-faint)]">
+            No activity matches the current filters.
+          </div>
+        )}
       </div>
     </div>
   )

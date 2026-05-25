@@ -19,9 +19,22 @@ const priorityDot: Record<InboxItem['priority'], string> = {
   low:    'bg-[var(--color-ink-ghost)]',
 }
 
+const draftCopies: Record<string, string> = {
+  'in-001':
+    "Hi Priya — confirmed: Q3 onboarding kicks off the week of July 14. Below is the risk owner table you asked about. Happy to jump on Friday at 3:30 or Monday at 11 if a call is easier.",
+  'in-002':
+    "Hi Jordan — quick clarification on the tier delta: Tier 2 commits to a 4-hour first response, Tier 3 to 1-hour, both 24/7. I've attached a one-page comparison alongside the proposal.",
+  'in-003':
+    "Hi Northwind team — gentle reminder that INV-0481 ($4,820) is now 9 days past due. Let me know if there's anything blocking on your side — happy to extend the window by another week if needed.",
+}
+
 export function InboxPage() {
   const [selectedId, setSelectedId] = useState<string>(nexusInbox[0]!.id)
   const [items, setItems] = useState<InboxItem[]>(nexusInbox)
+  const [drafts, setDrafts] = useState<Record<string, string>>(draftCopies)
+  const [editing, setEditing] = useState(false)
+  const [draftText, setDraftText] = useState('')
+  const [notice, setNotice] = useState<string | null>(null)
   const [tick, setTick] = useState(0)
 
   useEffect(() => {
@@ -31,14 +44,38 @@ export function InboxPage() {
 
   const selected = items.find((i) => i.id === selectedId) ?? items[0]!
 
+  function announce(message: string) {
+    setNotice(message)
+    window.setTimeout(() => setNotice(null), 2600)
+  }
+
   const approve = (id: string) => {
     setItems((prev) => prev.map((i) => i.id === id ? { ...i, status: 'sent' } : i))
+    setEditing(false)
+    announce('Draft approved and sent')
+  }
+
+  function startEditing() {
+    setDraftText(drafts[selected.id] ?? "Hi — Nexus has prepared a draft. Refine it before approval.")
+    setEditing(true)
+  }
+
+  function saveDraft() {
+    setDrafts((current) => ({ ...current, [selected.id]: draftText }))
+    setEditing(false)
+    announce('Draft updated')
+  }
+
+  function dismiss(id: string) {
+    setItems((prev) => prev.map((i) => i.id === id ? { ...i, status: 'queued' } : i))
+    setEditing(false)
+    announce('Item returned to queue')
   }
 
   return (
-    <div className="grid h-[calc(100dvh-56px)] grid-cols-1 lg:grid-cols-[minmax(340px,420px)_1fr]">
+    <div className="grid min-h-[calc(100dvh-56px)] grid-cols-1 lg:h-[calc(100dvh-56px)] lg:grid-cols-[minmax(340px,420px)_1fr]">
       {/* List */}
-      <div className="flex h-full flex-col border-r border-[var(--color-hairline-soft)]">
+      <div className="flex max-h-[46dvh] flex-col border-b border-[var(--color-hairline-soft)] lg:max-h-none lg:border-b-0 lg:border-r">
         <div className="flex items-center justify-between px-5 pb-3 pt-6">
           <div>
             <h1 className="text-[19px] font-semibold tracking-tight text-[var(--color-ink)]">Inbox</h1>
@@ -60,7 +97,7 @@ export function InboxPage() {
               return (
                 <li key={item.id}>
                   <button
-                    onClick={() => setSelectedId(item.id)}
+                    onClick={() => { setSelectedId(item.id); setEditing(false) }}
                     className={cn(
                       'group relative flex w-full flex-col gap-1 rounded-xl border px-3 py-2.5 text-left transition-all',
                       isActive
@@ -189,11 +226,39 @@ export function InboxPage() {
                   <div className="mt-4 rounded-xl border border-[oklch(86%_0.04_285)] bg-[oklch(99%_0.005_280)] p-4">
                     <div className="mb-2 flex items-center justify-between">
                       <div className="mono-label">Draft preview</div>
-                      <button className="flex items-center gap-1 text-[10.5px] text-[var(--color-ink-faint)] hover:text-[var(--color-ink-soft)]">
+                      <button
+                        onClick={startEditing}
+                        className="flex items-center gap-1 text-[10.5px] text-[var(--color-ink-faint)] hover:text-[var(--color-ink-soft)]"
+                      >
                         <Pencil className="h-3 w-3" /> Edit
                       </button>
                     </div>
-                    <DraftPreview item={selected} />
+                    {editing ? (
+                      <div className="flex flex-col gap-2">
+                        <textarea
+                          value={draftText}
+                          onChange={(e) => setDraftText(e.target.value)}
+                          className="min-h-28 resize-none rounded-lg border border-[var(--color-hairline)] bg-white/70 px-3 py-2 text-[12.5px] leading-relaxed text-[var(--color-ink-soft)] outline-none focus:border-[var(--color-violet-soft)]"
+                          aria-label="Edit draft"
+                        />
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={saveDraft}
+                            className="rounded-full bg-[var(--color-ink)] px-3 py-1 text-[11px] font-medium text-white"
+                          >
+                            Save draft
+                          </button>
+                          <button
+                            onClick={() => setEditing(false)}
+                            className="rounded-full px-2.5 py-1 text-[11px] text-[var(--color-ink-faint)] hover:bg-white"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <DraftPreview text={drafts[selected.id]} />
+                    )}
                   </div>
                 )}
 
@@ -208,10 +273,13 @@ export function InboxPage() {
                         <Send className="h-3 w-3" strokeWidth={2.2} />
                         Approve &amp; send
                       </button>
-                      <button className="pill !py-1.5">
+                      <button className="pill !py-1.5" onClick={startEditing}>
                         <Pencil className="h-3 w-3" /> Edit draft
                       </button>
-                      <button className="flex items-center gap-1 rounded-full px-2.5 py-1.5 text-[11.5px] text-[var(--color-ink-faint)] hover:bg-[var(--color-canvas-deep)] hover:text-[var(--color-ink-soft)]">
+                      <button
+                        onClick={() => dismiss(selected.id)}
+                        className="flex items-center gap-1 rounded-full px-2.5 py-1.5 text-[11.5px] text-[var(--color-ink-faint)] hover:bg-[var(--color-canvas-deep)] hover:text-[var(--color-ink-soft)]"
+                      >
                         <X className="h-3 w-3" /> Dismiss
                       </button>
                     </>
@@ -249,23 +317,27 @@ export function InboxPage() {
           </motion.div>
         </AnimatePresence>
       </div>
+      <AnimatePresence>
+        {notice && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 10 }}
+            className="fixed bottom-5 right-5 z-40 rounded-full bg-[var(--color-ink)] px-4 py-2 text-[12px] font-medium text-white shadow-[var(--shadow-pop)]"
+            role="status"
+          >
+            {notice}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }
 
-function DraftPreview({ item }: { item: InboxItem }) {
-  // Hand-tuned drafts so the demo never feels templated.
-  const drafts: Record<string, string> = {
-    'in-001':
-      "Hi Priya — confirmed: Q3 onboarding kicks off the week of July 14. Below is the risk owner table you asked about. Happy to jump on Friday at 3:30 or Monday at 11 if a call is easier.",
-    'in-002':
-      "Hi Jordan — quick clarification on the tier delta: Tier 2 commits to a 4-hour first response, Tier 3 to 1-hour, both 24/7. I've attached a one-page comparison alongside the proposal.",
-    'in-003':
-      "Hi Northwind team — gentle reminder that INV-0481 ($4,820) is now 9 days past due. Let me know if there's anything blocking on your side — happy to extend the window by another week if needed.",
-  }
+function DraftPreview({ text }: { text?: string }) {
   return (
     <p className="whitespace-pre-line text-[12.5px] italic leading-relaxed text-[var(--color-ink-soft)]">
-      {drafts[item.id] ?? "Hi — Nexus has prepared a draft. Click 'Edit' to refine it before approval."}
+      {text ?? "Hi — Nexus has prepared a draft. Click 'Edit' to refine it before approval."}
     </p>
   )
 }

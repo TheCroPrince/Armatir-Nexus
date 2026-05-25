@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Sparkles, Check, ChevronRight, X } from 'lucide-react'
 import { nexusRecommendations } from '@/data/nexus'
@@ -13,8 +14,10 @@ const categoryStyle: Record<NexusAIRecommendation['category'], { label: string; 
 }
 
 export function AICommandCenter() {
+  const navigate = useNavigate()
   const [index, setIndex] = useState(0)
   const [dismissed, setDismissed] = useState<Set<string>>(new Set())
+  const [notice, setNotice] = useState<string | null>(null)
 
   const visible = nexusRecommendations.filter((r) => !dismissed.has(r.id))
   const current = visible[index % Math.max(visible.length, 1)]
@@ -28,6 +31,17 @@ export function AICommandCenter() {
 
   function dismiss(id: string) {
     setDismissed((s) => new Set(s).add(id))
+  }
+
+  function runAction(rec: NexusAIRecommendation) {
+    const target = rec.category === 'opportunity' || rec.category === 'follow-up'
+      ? '/inbox'
+      : rec.category === 'risk'
+        ? '/workflows?w=overdue-escalation'
+        : '/activity'
+    setNotice(`${rec.action ?? 'Action'} opened`)
+    window.setTimeout(() => setNotice(null), 2200)
+    window.setTimeout(() => navigate(target), 420)
   }
 
   return (
@@ -124,7 +138,10 @@ export function AICommandCenter() {
                   <X className="h-3 w-3" /> Dismiss
                 </button>
                 {current.action && (
-                  <button className="group flex items-center gap-1.5 rounded-full bg-[var(--color-ink)] px-3 py-1.5 text-[12px] font-medium text-white shadow-[var(--shadow-card)] transition-transform hover:scale-[1.02] active:scale-[0.98]">
+                  <button
+                    onClick={() => runAction(current)}
+                    className="group flex items-center gap-1.5 rounded-full bg-[var(--color-ink)] px-3 py-1.5 text-[12px] font-medium text-white shadow-[var(--shadow-card)] transition-transform hover:scale-[1.02] active:scale-[0.98]"
+                  >
                     {current.action}
                     <ChevronRight className="h-3 w-3 transition-transform group-hover:translate-x-0.5" />
                   </button>
@@ -167,6 +184,19 @@ export function AICommandCenter() {
           </li>
         </ul>
       </div>
+      <AnimatePresence>
+        {notice && (
+          <motion.div
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 6 }}
+            className="absolute bottom-3 right-4 rounded-full bg-[var(--color-ink)] px-3 py-1.5 text-[11px] font-medium text-white shadow-[var(--shadow-card)]"
+            role="status"
+          >
+            {notice}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }

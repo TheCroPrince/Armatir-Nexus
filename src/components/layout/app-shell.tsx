@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Outlet } from 'react-router-dom'
 import { Sidebar } from './sidebar'
 import { Topbar } from './topbar'
+import { MobileNav } from './mobile-nav'
 import { CommandPalette } from '@/components/shell/command-palette'
 import { NotificationsPanel } from '@/components/shell/notifications-panel'
 import { nexusNotifications } from '@/data/nexus'
@@ -47,6 +48,7 @@ export function AppShell() {
 
       <Topbar
         onOpenPalette={() => { setPaletteOpen(true); setNotificationsOpen(false) }}
+        onAskNexus={() => { setPaletteOpen(true); setNotificationsOpen(false) }}
         onToggleNotifications={() => { setNotificationsOpen((o) => !o); setPaletteOpen(false) }}
         notificationsOpen={notificationsOpen}
         unreadCount={unreadCount}
@@ -55,7 +57,7 @@ export function AppShell() {
       <div className="relative z-10 flex">
         <Sidebar />
 
-        <div className="flex-1 min-w-0">
+        <div className="flex-1 min-w-0 pb-20 md:pb-0">
           <Outlet />
         </div>
       </div>
@@ -67,6 +69,7 @@ export function AppShell() {
         notifications={notifications}
         onUpdate={setNotifications}
       />
+      <MobileNav />
     </div>
   )
 }

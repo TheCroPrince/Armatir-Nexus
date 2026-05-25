@@ -42,6 +42,7 @@ const kindMeta: Record<NotificationKind, { icon: typeof Bell; tint: string; ring
 export function NotificationsPanel({ open, onClose, notifications, onUpdate }: NotificationsPanelProps) {
   const navigate = useNavigate()
   const panelRef = useRef<HTMLDivElement>(null)
+  const restoreFocusRef = useRef<HTMLElement | null>(null)
   const items = notifications
   const [filter, setFilter] = useState<Filter>('all')
   const [tick, setTick] = useState(0)
@@ -49,8 +50,27 @@ export function NotificationsPanel({ open, onClose, notifications, onUpdate }: N
   // ESC to close + click outside
   useEffect(() => {
     if (!open) return
+    restoreFocusRef.current = document.activeElement instanceof HTMLElement
+      ? document.activeElement
+      : null
+    window.setTimeout(() => panelRef.current?.focus(), 0)
     function onKey(e: KeyboardEvent) {
       if (e.key === 'Escape') onClose()
+      if (e.key === 'Tab' && panelRef.current) {
+        const focusable = panelRef.current.querySelectorAll<HTMLElement>(
+          'button, [href], input, textarea, [tabindex]:not([tabindex="-1"])',
+        )
+        if (focusable.length === 0) return
+        const first = focusable[0]!
+        const last = focusable[focusable.length - 1]!
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault()
+          last.focus()
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault()
+          first.focus()
+        }
+      }
     }
     function onClick(e: MouseEvent) {
       const target = e.target as Node
@@ -68,6 +88,8 @@ export function NotificationsPanel({ open, onClose, notifications, onUpdate }: N
       window.removeEventListener('keydown', onKey)
       window.removeEventListener('mousedown', onClick)
       clearTimeout(id)
+      restoreFocusRef.current?.focus()
+      restoreFocusRef.current = null
     }
   }, [open, onClose])
 
@@ -113,7 +135,9 @@ export function NotificationsPanel({ open, onClose, notifications, onUpdate }: N
           // Anchored under the bell — right-aligned to viewport with comfortable inset.
           className="glass-strong fixed right-3 top-[58px] z-40 w-[380px] overflow-hidden rounded-2xl md:right-5"
           role="dialog"
+          aria-modal="true"
           aria-label="Notifications"
+          tabIndex={-1}
         >
           {/* Header */}
           <div className="flex items-center justify-between border-b border-[var(--color-hairline-soft)] px-4 py-3">
