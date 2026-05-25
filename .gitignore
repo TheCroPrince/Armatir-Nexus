@@ -1,0 +1,58 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Build output
+dist/
+dist-ssr/
+build/
+out/
+
+# Vite / Vercel / Turbo
+.vite/
+.vercel/
+.turbo/
+
+# TypeScript
+*.tsbuildinfo
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Local env files — never commit these
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+*.local
+
+# OS / editor cruft
+.DS_Store
+Thumbs.db
+*.pem
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+.vscode/*
+!.vscode/extensions.json
+.idea/
+
+# AI agent tooling — keep GitHub free of AI-tool footprints.
+# (Exception: a repo that intentionally ships one of these as a feature.)
+.claude/
+.codex/
+.cursor/
+.copilot/
+.aider/
+.continue/
+.github-copilot/
