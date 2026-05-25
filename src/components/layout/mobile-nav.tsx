@@ -5,6 +5,7 @@ import {
   Inbox as InboxIcon,
   Boxes,
   Radio,
+  Settings,
 } from 'lucide-react'
 import { cn } from '@/lib/cn'
 
@@ -16,10 +17,10 @@ const mobileNav = [
   { to: '/activity', label: 'Activity', icon: Radio },
 ]
 
-export function MobileNav() {
+export function MobileNav({ onOpenSettings }: { onOpenSettings: () => void }) {
   return (
     <nav
-      className="glass-strong fixed inset-x-3 bottom-3 z-40 grid grid-cols-5 rounded-2xl px-2 py-1.5 md:hidden"
+      className="glass-strong fixed inset-x-3 bottom-3 z-40 grid grid-cols-6 rounded-2xl px-1.5 py-1.5 md:hidden"
       aria-label="Primary navigation"
     >
       {mobileNav.map((item) => (
@@ -28,7 +29,7 @@ export function MobileNav() {
           to={item.to}
           end={item.to === '/'}
           className={({ isActive }) => cn(
-            'flex flex-col items-center justify-center gap-0.5 rounded-xl px-1 py-1.5 text-[10px] font-medium transition-colors',
+            'flex min-w-0 flex-col items-center justify-center gap-0.5 rounded-xl px-0.5 py-1.5 text-[9.5px] font-medium transition-colors',
             isActive
               ? 'bg-white text-[var(--color-ink)] shadow-[var(--shadow-card)]'
               : 'text-[var(--color-ink-faint)] hover:text-[var(--color-ink-soft)]',
@@ -40,11 +41,19 @@ export function MobileNav() {
                 className={cn('h-4 w-4', isActive ? 'text-[var(--color-violet)]' : 'text-[var(--color-ink-faint)]')}
                 strokeWidth={1.8}
               />
-              <span>{item.label}</span>
+              <span className="truncate">{item.label}</span>
             </>
           )}
         </NavLink>
       ))}
+      <button
+        onClick={onOpenSettings}
+        className="flex min-w-0 flex-col items-center justify-center gap-0.5 rounded-xl px-0.5 py-1.5 text-[9.5px] font-medium text-[var(--color-ink-faint)] transition-colors hover:text-[var(--color-ink-soft)]"
+        aria-label="Open settings"
+      >
+        <Settings className="h-4 w-4 text-[var(--color-ink-faint)]" strokeWidth={1.8} />
+        <span className="truncate">Settings</span>
+      </button>
     </nav>
   )
 }

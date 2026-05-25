@@ -5,12 +5,14 @@ import { Topbar } from './topbar'
 import { MobileNav } from './mobile-nav'
 import { CommandPalette } from '@/components/shell/command-palette'
 import { NotificationsPanel } from '@/components/shell/notifications-panel'
+import { SettingsPanel } from '@/components/shell/settings-panel'
 import { nexusNotifications } from '@/data/nexus'
 import type { NexusNotification } from '@/types/nexus'
 
 export function AppShell() {
   const [paletteOpen, setPaletteOpen] = useState(false)
   const [notificationsOpen, setNotificationsOpen] = useState(false)
+  const [settingsOpen, setSettingsOpen] = useState(false)
   const [notifications, setNotifications] = useState<NexusNotification[]>(nexusNotifications)
 
   // ⌘K / Ctrl+K → palette. ESC → close any open overlay.
@@ -20,10 +22,12 @@ export function AppShell() {
         e.preventDefault()
         setPaletteOpen((o) => !o)
         setNotificationsOpen(false)
+        setSettingsOpen(false)
       }
       if (e.key === 'Escape') {
         setPaletteOpen(false)
         setNotificationsOpen(false)
+        setSettingsOpen(false)
       }
     }
     window.addEventListener('keydown', handler)
@@ -47,15 +51,15 @@ export function AppShell() {
       />
 
       <Topbar
-        onOpenPalette={() => { setPaletteOpen(true); setNotificationsOpen(false) }}
-        onAskNexus={() => { setPaletteOpen(true); setNotificationsOpen(false) }}
-        onToggleNotifications={() => { setNotificationsOpen((o) => !o); setPaletteOpen(false) }}
+        onOpenPalette={() => { setPaletteOpen(true); setNotificationsOpen(false); setSettingsOpen(false) }}
+        onAskNexus={() => { setPaletteOpen(true); setNotificationsOpen(false); setSettingsOpen(false) }}
+        onToggleNotifications={() => { setNotificationsOpen((o) => !o); setPaletteOpen(false); setSettingsOpen(false) }}
         notificationsOpen={notificationsOpen}
         unreadCount={unreadCount}
       />
 
       <div className="relative z-10 flex">
-        <Sidebar />
+        <Sidebar onOpenSettings={() => { setSettingsOpen(true); setPaletteOpen(false); setNotificationsOpen(false) }} />
 
         <div className="flex-1 min-w-0 pb-20 md:pb-0">
           <Outlet />
@@ -69,7 +73,8 @@ export function AppShell() {
         notifications={notifications}
         onUpdate={setNotifications}
       />
-      <MobileNav />
+      <SettingsPanel open={settingsOpen} onClose={() => setSettingsOpen(false)} />
+      <MobileNav onOpenSettings={() => { setSettingsOpen(true); setPaletteOpen(false); setNotificationsOpen(false) }} />
     </div>
   )
 }

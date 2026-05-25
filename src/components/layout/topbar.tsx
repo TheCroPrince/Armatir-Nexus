@@ -39,12 +39,11 @@ export function Topbar({ onOpenPalette, onToggleNotifications, onAskNexus, notif
       {/* Command palette trigger */}
       <button
         onClick={onOpenPalette}
-        className="ml-auto group flex items-center gap-2 rounded-full border border-[var(--color-hairline)] bg-white/70 px-3 py-1.5 text-[12px] text-[var(--color-ink-faint)] shadow-[var(--shadow-card)] transition-all hover:border-[var(--color-violet-soft)] hover:bg-white hover:text-[var(--color-ink-soft)]"
+        className="ml-auto group flex h-8 w-8 items-center justify-center rounded-full border border-[var(--color-hairline)] bg-white/70 text-[12px] text-[var(--color-ink-faint)] shadow-[var(--shadow-card)] transition-all hover:border-[var(--color-violet-soft)] hover:bg-white hover:text-[var(--color-ink-soft)] sm:w-auto sm:gap-2 sm:px-3 sm:py-1.5"
         aria-label="Open command palette"
       >
         <Search className="h-3.5 w-3.5" strokeWidth={1.8} />
         <span className="hidden sm:inline">Search workflows, integrations…</span>
-        <span className="sm:hidden">Search</span>
         <span className="ml-1 hidden items-center gap-0.5 sm:flex">
           <kbd>⌘</kbd>
           <kbd>K</kbd>
@@ -83,7 +82,7 @@ export function Topbar({ onOpenPalette, onToggleNotifications, onAskNexus, notif
 
       {/* Operator avatar */}
       <button
-        className="ml-0.5 flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-[oklch(74%_0.16_50)] to-[oklch(66%_0.20_30)] text-[11px] font-semibold text-white shadow-[0_1px_2px_oklch(40%_0.15_30_/_0.3)]"
+        className="ml-0.5 hidden h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-[oklch(74%_0.16_50)] to-[oklch(66%_0.20_30)] text-[11px] font-semibold text-white shadow-[0_1px_2px_oklch(40%_0.15_30_/_0.3)] sm:flex"
         aria-label="Account"
       >
         MC

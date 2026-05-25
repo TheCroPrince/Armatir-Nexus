@@ -38,14 +38,14 @@ export function ActivityPage() {
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
-          <label className="flex items-center gap-2 rounded-full border border-[var(--color-hairline)] bg-white/70 px-3 py-1.5 shadow-[var(--shadow-card)]">
+        <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
+          <label className="flex min-w-0 flex-1 items-center gap-2 rounded-full border border-[var(--color-hairline)] bg-white/70 px-3 py-1.5 shadow-[var(--shadow-card)] sm:flex-none">
             <Search className="h-3.5 w-3.5 text-[var(--color-ink-faint)]" />
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search events…"
-              className="w-44 bg-transparent text-[12px] text-[var(--color-ink)] outline-none placeholder:text-[var(--color-ink-ghost)]"
+              className="w-full min-w-0 bg-transparent text-[12px] text-[var(--color-ink)] outline-none placeholder:text-[var(--color-ink-ghost)] sm:w-44"
             />
           </label>
           <button
@@ -74,7 +74,7 @@ export function ActivityPage() {
             {filterLabels[f]}
           </button>
         ))}
-        <span className="ml-auto flex items-center gap-1.5 text-[11.5px] text-[var(--color-ink-faint)]">
+        <span className="w-full text-right sm:ml-auto sm:w-auto flex items-center justify-end gap-1.5 text-[11.5px] text-[var(--color-ink-faint)]">
           <Radio className="h-3 w-3 text-[var(--color-mint)]" /> 12 events / min
         </span>
       </div>

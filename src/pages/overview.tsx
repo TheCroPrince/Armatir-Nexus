@@ -6,7 +6,7 @@ import { ActiveWorkflows }   from '@/components/overview/active-workflows'
 
 export function OverviewPage() {
   return (
-    <div className="flex flex-col gap-5 px-5 py-6 md:px-7 md:py-7 lg:px-10 lg:py-8">
+    <div className="flex min-w-0 max-w-full flex-col gap-5 overflow-hidden px-5 py-6 md:px-7 md:py-7 lg:px-10 lg:py-8">
       <WorkspaceHeader />
 
       <MetricRow />

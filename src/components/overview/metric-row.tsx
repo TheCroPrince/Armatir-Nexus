@@ -16,16 +16,22 @@ const trendColor = {
   steady: 'text-[var(--color-ink-soft)] bg-[var(--color-canvas-deep)]',
 } as const
 
+const trendTone = {
+  up: 'mint',
+  down: 'rose',
+  steady: 'blue',
+} as const
+
 export function MetricRow() {
   return (
-    <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+    <div className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
       {nexusMetrics.map((m, i) => (
         <motion.div
           key={m.id}
           initial={{ opacity: 0, y: 6 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, delay: 0.06 * i, ease: [0.16, 1, 0.3, 1] }}
-          className="glass relative overflow-hidden rounded-2xl p-4"
+          className="glass relative min-w-0 overflow-hidden rounded-2xl p-4"
         >
           <div className="flex items-start justify-between">
             <div>
@@ -37,18 +43,22 @@ export function MetricRow() {
               </div>
             </div>
 
-            <span className={cn('inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[10.5px] font-medium', trendColor[m.trend])}>
+            <span className={cn('inline-flex max-w-[132px] shrink-0 items-center gap-1 rounded-full px-1.5 py-0.5 text-[10.5px] font-medium', trendColor[m.trend])}>
               {trendIcon[m.trend]}
-              <span className="tabular-nums">{m.delta}</span>
+              <span className="truncate tabular-nums">{m.delta}</span>
             </span>
           </div>
 
-          <div className="mt-2 -mx-1">
+          <div className="mt-3 -mx-1">
             <Sparkline
               values={m.sparkline}
               width={200}
-              height={28}
-              color={m.trend === 'down' ? 'oklch(55% 0.20 25)' : 'oklch(55% 0.20 280)'}
+              height={32}
+              tone={trendTone[m.trend]}
+              trend={m.trend}
+              emphasis={i === 0 ? 'strong' : 'normal'}
+              strokeWidth={1.8}
+              className="w-full"
             />
           </div>
 

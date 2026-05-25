@@ -26,11 +26,10 @@ const primary: NavEntry[] = [
 ]
 
 const secondary: NavEntry[] = [
-  { to: '#settings', label: 'Settings', icon: Settings    },
   { to: '#help',     label: 'Help',     icon: HelpCircle  },
 ]
 
-export function Sidebar() {
+export function Sidebar({ onOpenSettings }: { onOpenSettings: () => void }) {
   return (
     <aside className="hidden md:flex h-full w-60 flex-col gap-1 px-3 pb-4 pt-3">
       {/* Workspace pill */}
@@ -107,6 +106,13 @@ export function Sidebar() {
 
       {/* Secondary nav */}
       <nav className="flex flex-col gap-0.5">
+        <button
+          onClick={onOpenSettings}
+          className="group flex items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-[13px] text-[var(--color-ink-faint)] transition-colors hover:bg-white/60 hover:text-[var(--color-ink)]"
+        >
+          <Settings className="h-4 w-4" strokeWidth={1.8} />
+          <span className="font-medium">Settings</span>
+        </button>
         {secondary.map((item) => (
           <a
             key={item.to}

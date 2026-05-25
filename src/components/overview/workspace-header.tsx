@@ -16,23 +16,23 @@ export function WorkspaceHeader() {
       initial={{ opacity: 0, y: -4 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-      className="flex items-end justify-between gap-4"
+      className="flex flex-col items-start justify-between gap-4 lg:flex-row lg:items-end"
     >
-      <div className="flex flex-col gap-1.5">
-        <div className="flex items-center gap-2">
+      <div className="flex w-full min-w-0 flex-col gap-1.5 lg:w-auto">
+        <div className="flex flex-wrap items-center gap-2">
           <span className="mono-label">{currentStamp}</span>
           <span className="h-1 w-1 rounded-full bg-[var(--color-ink-ghost)]" />
-          <span className="flex items-center gap-1.5 text-[11.5px] text-[var(--color-ink-soft)]">
+          <span className="flex min-w-0 items-center gap-1.5 text-[11.5px] text-[var(--color-ink-soft)]">
             <span className="live-dot" />
-            <span>3 workflows running · all systems nominal</span>
+            <span className="truncate">3 workflows running - all systems nominal</span>
           </span>
         </div>
         <h1 className="text-[26px] font-semibold tracking-tight text-[var(--color-ink)]">
           Welcome back, Matthew.
         </h1>
-        <p className="text-[13px] text-[var(--color-ink-soft)]">
+        <p className="max-w-full text-wrap text-[13px] leading-relaxed text-[var(--color-ink-soft)]">
           Nexus handled <span className="font-medium text-[var(--color-ink)]">31 things</span> while you were away
-          — <span className="font-medium text-[var(--color-violet)]">4 need your eyes</span>.
+          {' '}-- <span className="font-medium text-[var(--color-violet)]">4 need your eyes</span>.
         </p>
       </div>
 
