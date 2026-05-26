@@ -1,4 +1,4 @@
-import { Bell, Search, Sparkles } from 'lucide-react'
+import { ArrowLeft, Bell, Search, Sparkles } from 'lucide-react'
 import { ArmatirMark } from '@/components/brand/armatir-mark'
 import { cn } from '@/lib/cn'
 
@@ -49,6 +49,17 @@ export function Topbar({ onOpenPalette, onToggleNotifications, onAskNexus, notif
           <kbd>K</kbd>
         </span>
       </button>
+
+      {/* Demo exit link */}
+      <a
+        href="https://armatir.com"
+        className="flex h-8 shrink-0 items-center gap-1.5 rounded-full border border-[var(--color-hairline)] bg-white/55 px-2.5 text-[12px] font-medium text-[var(--color-ink-soft)] shadow-[var(--shadow-card)] transition-all hover:border-[var(--color-violet-soft)] hover:bg-white hover:text-[var(--color-ink)] sm:px-3"
+        aria-label="Back to the main Armatir website"
+      >
+        <ArrowLeft className="h-3.5 w-3.5" strokeWidth={1.8} />
+        <span className="sm:hidden">Armatir</span>
+        <span className="hidden sm:inline">Back to Armatir</span>
+      </a>
 
       {/* Quick action — AI ask */}
       <button
