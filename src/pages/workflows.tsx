@@ -352,7 +352,7 @@ function DetailMeta({ workflow }: { workflow: NexusWorkflow }) {
 
 function DetailRunHistory({ workflow }: { workflow: NexusWorkflow }) {
   return (
-    <div className="glass rounded-2xl p-5">
+    <div className="glass min-w-0 overflow-hidden rounded-2xl p-5">
       <div className="mb-1 flex items-center justify-between">
         <div className="text-[13px] font-medium text-[var(--color-ink)]">Run history</div>
         <span className="font-mono text-[10.5px] text-[var(--color-ink-faint)]">14 days</span>
@@ -361,8 +361,15 @@ function DetailRunHistory({ workflow }: { workflow: NexusWorkflow }) {
         Total <span className="font-mono text-[var(--color-ink-soft)]">{workflow.sparkline.reduce((a, b) => a + b, 0)}</span> runs · success rate <span className="font-mono text-[var(--color-ink-soft)]">99.2%</span>
       </div>
 
-      <div className="mt-4">
-        <Sparkline values={workflow.sparkline} width={360} height={56} color="oklch(55% 0.20 280)" strokeWidth={1.8} />
+      <div className="mt-4 min-w-0 overflow-hidden">
+        <Sparkline
+          values={workflow.sparkline}
+          width={320}
+          height={56}
+          color="oklch(55% 0.20 280)"
+          strokeWidth={1.8}
+          className="w-full max-w-full"
+        />
       </div>
 
       <div className="mt-4 grid grid-cols-3 gap-3 border-t border-[var(--color-hairline-soft)] pt-3">
