@@ -52,6 +52,7 @@ export function AppShell() {
 
       <Topbar
         onOpenPalette={() => { setPaletteOpen(true); setNotificationsOpen(false); setSettingsOpen(false) }}
+        onOpenSettings={() => { setSettingsOpen(true); setPaletteOpen(false); setNotificationsOpen(false) }}
         onAskNexus={() => { setPaletteOpen(true); setNotificationsOpen(false); setSettingsOpen(false) }}
         onToggleNotifications={() => { setNotificationsOpen((o) => !o); setPaletteOpen(false); setSettingsOpen(false) }}
         notificationsOpen={notificationsOpen}

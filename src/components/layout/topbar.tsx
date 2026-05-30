@@ -1,21 +1,60 @@
+import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { ArrowLeft, Bell, Search, Sparkles } from 'lucide-react'
 import { ArmatirMark } from '@/components/brand/armatir-mark'
+import { UserMenu } from '@/components/shell/user-menu'
 import { cn } from '@/lib/cn'
 
 interface TopbarProps {
   onOpenPalette: () => void
+  onOpenSettings: () => void
   onToggleNotifications: () => void
   onAskNexus: () => void
   notificationsOpen: boolean
   unreadCount: number
 }
 
-export function Topbar({ onOpenPalette, onToggleNotifications, onAskNexus, notificationsOpen, unreadCount }: TopbarProps) {
+export function Topbar({
+  onOpenPalette,
+  onOpenSettings,
+  onToggleNotifications,
+  onAskNexus,
+  notificationsOpen,
+  unreadCount,
+}: TopbarProps) {
+  const [userMenuOpen, setUserMenuOpen] = useState(false)
+
+  function openPalette() {
+    setUserMenuOpen(false)
+    onOpenPalette()
+  }
+
+  function askNexus() {
+    setUserMenuOpen(false)
+    onAskNexus()
+  }
+
+  function toggleNotifications() {
+    setUserMenuOpen(false)
+    onToggleNotifications()
+  }
+
+  function toggleUserMenu() {
+    if (notificationsOpen) onToggleNotifications()
+    setUserMenuOpen((open) => !open)
+  }
+
   return (
     <header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b border-[var(--color-hairline-soft)] bg-[oklch(98%_0.015_290_/_0.6)] px-3 backdrop-blur-xl md:px-5">
 
       {/* Brand */}
-      <div className="flex items-center gap-2.5 pr-2">
+      <Link
+        to="/"
+        onClick={() => setUserMenuOpen(false)}
+        className="flex shrink-0 items-center gap-2.5 rounded-full pr-2 transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-violet-soft)]"
+        aria-label="Go to Nexus overview"
+        title="Nexus overview"
+      >
         <ArmatirMark className="h-7 w-7" />
         <div className="hidden flex-col leading-tight sm:flex">
           <span className="text-[13px] font-semibold tracking-tight text-[var(--color-ink)]">
@@ -25,7 +64,7 @@ export function Topbar({ onOpenPalette, onToggleNotifications, onAskNexus, notif
             by Armatir
           </span>
         </div>
-      </div>
+      </Link>
 
       <div className="h-5 w-px bg-[var(--color-hairline)]" />
 
@@ -38,7 +77,7 @@ export function Topbar({ onOpenPalette, onToggleNotifications, onAskNexus, notif
 
       {/* Command palette trigger */}
       <button
-        onClick={onOpenPalette}
+        onClick={openPalette}
         className="ml-auto group flex h-8 w-8 items-center justify-center rounded-full border border-[var(--color-hairline)] bg-white/70 text-[12px] text-[var(--color-ink-faint)] shadow-[var(--shadow-card)] transition-all hover:border-[var(--color-violet-soft)] hover:bg-white hover:text-[var(--color-ink-soft)] sm:w-auto sm:gap-2 sm:px-3 sm:py-1.5"
         aria-label="Open command palette"
       >
@@ -63,7 +102,7 @@ export function Topbar({ onOpenPalette, onToggleNotifications, onAskNexus, notif
 
       {/* Quick action — AI ask */}
       <button
-        onClick={onAskNexus}
+        onClick={askNexus}
         className="hidden lg:flex items-center gap-1.5 rounded-full bg-gradient-to-br from-[oklch(60%_0.22_295)] to-[oklch(55%_0.20_260)] px-3 py-1.5 text-[12px] font-medium text-white shadow-[0_8px_24px_oklch(55%_0.20_280_/_0.3)] transition-transform hover:scale-[1.02] active:scale-[0.98]"
       >
         <Sparkles className="h-3.5 w-3.5" strokeWidth={2} />
@@ -72,7 +111,7 @@ export function Topbar({ onOpenPalette, onToggleNotifications, onAskNexus, notif
 
       {/* Notifications */}
       <button
-        onClick={onToggleNotifications}
+        onClick={toggleNotifications}
         data-notifications-anchor
         className={cn(
           'relative flex h-8 w-8 items-center justify-center rounded-full transition-colors',
@@ -93,11 +132,25 @@ export function Topbar({ onOpenPalette, onToggleNotifications, onAskNexus, notif
 
       {/* Operator avatar */}
       <button
-        className="ml-0.5 hidden h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-[oklch(74%_0.16_50)] to-[oklch(66%_0.20_30)] text-[11px] font-semibold text-white shadow-[0_1px_2px_oklch(40%_0.15_30_/_0.3)] sm:flex"
+        onClick={toggleUserMenu}
+        data-user-menu-anchor
+        className={cn(
+          'ml-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[oklch(74%_0.16_50)] to-[oklch(66%_0.20_30)] text-[11px] font-semibold text-white shadow-[0_1px_2px_oklch(40%_0.15_30_/_0.3)] transition-transform hover:scale-[1.03] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-violet-soft)] active:scale-[0.98]',
+          userMenuOpen && 'ring-2 ring-[var(--color-violet-soft)]',
+        )}
         aria-label="Account"
+        aria-expanded={userMenuOpen}
+        aria-haspopup="dialog"
       >
         MC
       </button>
+
+      <UserMenu
+        open={userMenuOpen}
+        onClose={() => setUserMenuOpen(false)}
+        onOpenPalette={onOpenPalette}
+        onOpenSettings={onOpenSettings}
+      />
     </header>
   )
 }
