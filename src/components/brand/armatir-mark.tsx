@@ -4,13 +4,14 @@ interface ArmatirMarkProps {
   className?: string
 }
 
-// Loads the Armatir wordmark as an inline <img> so it renders even before
+const logoSrc = '/armatir-logo(768%20x%20512%20px).png'
+
+// Loads the Armatir mark as an inline <img> so it renders even before
 // the JS bundle is parsed and respects the surrounding flex/grid sizing.
-// The source asset is shipped from /public/armatir-logo.svg.
 export function ArmatirMark({ className }: ArmatirMarkProps) {
   return (
     <img
-      src="/armatir-logo.svg"
+      src={logoSrc}
       alt="Armatir"
       width={32}
       height={32}
