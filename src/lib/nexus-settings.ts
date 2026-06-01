@@ -25,6 +25,8 @@ export const defaultNexusSettings: NexusSettings = {
   threshold: 86,
 }
 
+const nexusSettingsStorageKey = 'armatir:nexus-settings:v1'
+
 export interface NexusSettingsContextValue {
   settings: NexusSettings
   updateSetting: <Key extends keyof NexusSettings>(key: Key, value: NexusSettings[Key]) => void
@@ -45,4 +47,54 @@ export function notificationAllowedBySettings(notification: NexusNotification, s
   if (!settings.emailAlerts && notification.source === 'gmail') return false
   if (!settings.slackAlerts && notification.source === 'slack') return false
   return true
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null
+}
+
+function readBoolean(value: unknown, fallback: boolean) {
+  return typeof value === 'boolean' ? value : fallback
+}
+
+function readThreshold(value: unknown) {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return defaultNexusSettings.threshold
+  return Math.min(96, Math.max(60, Math.round(value)))
+}
+
+export function normalizeNexusSettings(value: unknown): NexusSettings {
+  if (!isRecord(value)) return defaultNexusSettings
+
+  return {
+    aiTriage: readBoolean(value.aiTriage, defaultNexusSettings.aiTriage),
+    autoEscalation: readBoolean(value.autoEscalation, defaultNexusSettings.autoEscalation),
+    emailAlerts: readBoolean(value.emailAlerts, defaultNexusSettings.emailAlerts),
+    slackAlerts: readBoolean(value.slackAlerts, defaultNexusSettings.slackAlerts),
+    dailyDigest: readBoolean(value.dailyDigest, defaultNexusSettings.dailyDigest),
+    compactMode: readBoolean(value.compactMode, defaultNexusSettings.compactMode),
+    reduceMotion: readBoolean(value.reduceMotion, defaultNexusSettings.reduceMotion),
+    sampleData: readBoolean(value.sampleData, defaultNexusSettings.sampleData),
+    threshold: readThreshold(value.threshold),
+  }
+}
+
+export function loadStoredNexusSettings(): NexusSettings {
+  if (typeof window === 'undefined') return defaultNexusSettings
+
+  try {
+    const raw = window.localStorage.getItem(nexusSettingsStorageKey)
+    return raw ? normalizeNexusSettings(JSON.parse(raw)) : defaultNexusSettings
+  } catch {
+    return defaultNexusSettings
+  }
+}
+
+export function saveNexusSettings(settings: NexusSettings) {
+  if (typeof window === 'undefined') return
+
+  try {
+    window.localStorage.setItem(nexusSettingsStorageKey, JSON.stringify(settings))
+  } catch {
+    // Storage can fail in private modes; settings should still work for the session.
+  }
 }

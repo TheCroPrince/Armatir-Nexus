@@ -13,6 +13,7 @@ import {
 import type { LucideIcon } from 'lucide-react'
 import { cn } from '@/lib/cn'
 import { useNexusSettings } from '@/lib/nexus-settings'
+import type { NexusSettings } from '@/lib/nexus-settings'
 
 interface SettingsPanelProps {
   open: boolean
@@ -86,7 +87,7 @@ export function SettingsPanel({ open, onClose }: SettingsPanelProps) {
   const panelRef = useRef<HTMLDivElement>(null)
   const restoreFocusRef = useRef<HTMLElement | null>(null)
   const { settings, updateSetting, resetSettings } = useNexusSettings()
-  const [notice, setNotice] = useState('Changes apply to this session.')
+  const [notice, setNotice] = useState('Changes save on this browser.')
 
   useEffect(() => {
     if (!open) return
@@ -122,15 +123,40 @@ export function SettingsPanel({ open, onClose }: SettingsPanelProps) {
     }
   }, [open, onClose])
 
-  function applySetting<Key extends keyof typeof settings>(key: Key, value: (typeof settings)[Key]) {
+  function settingNotice<Key extends keyof NexusSettings>(key: Key, value: NexusSettings[Key]) {
+    switch (key) {
+      case 'aiTriage':
+        return value ? 'AI recommendations restored.' : 'AI recommendations paused.'
+      case 'autoEscalation':
+        return value ? 'Risk recommendations restored.' : 'Risk recommendations hidden.'
+      case 'emailAlerts':
+        return value ? 'Gmail notifications restored.' : 'Gmail notifications hidden.'
+      case 'slackAlerts':
+        return value ? 'Slack notifications restored.' : 'Slack notifications hidden.'
+      case 'dailyDigest':
+        return value ? 'Daily digest added to notifications.' : 'Daily digest removed.'
+      case 'compactMode':
+        return value ? 'Compact density applied.' : 'Comfortable density restored.'
+      case 'reduceMotion':
+        return value ? 'Motion reduced across workspace.' : 'Motion restored.'
+      case 'sampleData':
+        return value ? 'Sample data restored across dashboard.' : 'Sample data hidden across dashboard.'
+      case 'threshold':
+        return `AI threshold set to ${value}%.`
+      default:
+        return 'Changes saved.'
+    }
+  }
+
+  function applySetting<Key extends keyof NexusSettings>(key: Key, value: NexusSettings[Key]) {
     updateSetting(key, value)
-    setNotice('Changes applied to workspace.')
+    setNotice(settingNotice(key, value))
   }
 
   function resetDemoSettings() {
     resetSettings()
-    setNotice('Demo settings reset.')
-    window.setTimeout(() => setNotice('Changes apply to this session.'), 2200)
+    setNotice('Demo settings reset and saved.')
+    window.setTimeout(() => setNotice('Changes save on this browser.'), 2200)
   }
 
   return (
@@ -159,7 +185,7 @@ export function SettingsPanel({ open, onClose }: SettingsPanelProps) {
             <div className="flex items-center justify-between border-b border-[var(--color-hairline-soft)] px-4 py-3">
               <div>
                 <div className="text-[14px] font-semibold tracking-tight text-[var(--color-ink)]">Settings</div>
-                <div className="text-[10.5px] text-[var(--color-ink-faint)]">Demo controls only</div>
+                <div className="text-[10.5px] text-[var(--color-ink-faint)]">Workspace controls</div>
               </div>
               <button
                 onClick={onClose}

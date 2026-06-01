@@ -11,17 +11,22 @@ import { nexusNotifications } from '@/data/nexus'
 import {
   NexusSettingsContext,
   defaultNexusSettings,
+  loadStoredNexusSettings,
   notificationAllowedBySettings,
+  saveNexusSettings,
 } from '@/lib/nexus-settings'
 import { cn } from '@/lib/cn'
 import type { NexusNotification } from '@/types/nexus'
+
+const dailyDigestTimestamp = new Date(Date.now() - 2 * 60_000).toISOString()
 
 export function AppShell() {
   const [paletteOpen, setPaletteOpen] = useState(false)
   const [notificationsOpen, setNotificationsOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [notifications, setNotifications] = useState<NexusNotification[]>(nexusNotifications)
-  const [settings, setSettings] = useState(defaultNexusSettings)
+  const [dailyDigestRead, setDailyDigestRead] = useState(false)
+  const [settings, setSettings] = useState(loadStoredNexusSettings)
 
   const updateSetting = useCallback(
     <Key extends keyof typeof defaultNexusSettings>(key: Key, value: (typeof defaultNexusSettings)[Key]) => {
@@ -33,6 +38,10 @@ export function AppShell() {
   const resetSettings = useCallback(() => {
     setSettings(defaultNexusSettings)
   }, [])
+
+  useEffect(() => {
+    saveNexusSettings(settings)
+  }, [settings])
 
   // ⌘K / Ctrl+K → palette. ESC → close any open overlay.
   useEffect(() => {
@@ -53,13 +62,36 @@ export function AppShell() {
     return () => window.removeEventListener('keydown', handler)
   }, [])
 
+  const dailyDigestNotification = useMemo<NexusNotification | null>(() => {
+    if (!settings.dailyDigest) return null
+
+    return {
+      id: 'daily-digest-summary',
+      kind: 'system',
+      title: 'Daily digest scheduled for 5:00 PM',
+      body: 'Approvals, workflow runs, and exceptions will roll up into the operator summary.',
+      timestamp: dailyDigestTimestamp,
+      read: dailyDigestRead,
+      href: '/activity',
+      action: 'View digest',
+    }
+  }, [dailyDigestRead, settings.dailyDigest])
+
+  const notificationsWithSettings = useMemo(
+    () => dailyDigestNotification ? [dailyDigestNotification, ...notifications] : notifications,
+    [dailyDigestNotification, notifications],
+  )
+
   const visibleNotifications = useMemo(
-    () => notifications.filter((notification) => notificationAllowedBySettings(notification, settings)),
-    [notifications, settings],
+    () => notificationsWithSettings.filter((notification) => notificationAllowedBySettings(notification, settings)),
+    [notificationsWithSettings, settings],
   )
   const unreadCount = visibleNotifications.filter((n) => !n.read).length
 
   function updateVisibleNotifications(nextVisible: NexusNotification[]) {
+    const nextDigest = nextVisible.find((notification) => notification.id === 'daily-digest-summary')
+    if (nextDigest) setDailyDigestRead(nextDigest.read)
+
     setNotifications((current) => current.map((notification) =>
       nextVisible.find((next) => next.id === notification.id) ?? notification,
     ))

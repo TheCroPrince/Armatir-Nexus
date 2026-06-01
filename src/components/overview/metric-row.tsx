@@ -3,6 +3,7 @@ import { ArrowUpRight, Minus, TrendingUp } from 'lucide-react'
 import { nexusMetrics } from '@/data/nexus'
 import { Sparkline } from '@/components/ui/sparkline'
 import { cn } from '@/lib/cn'
+import { useNexusSettings } from '@/lib/nexus-settings'
 
 const trendIcon = {
   up:     <ArrowUpRight className="h-3 w-3" strokeWidth={2.2} />,
@@ -23,11 +24,24 @@ const trendTone = {
 } as const
 
 export function MetricRow() {
+  const { settings } = useNexusSettings()
+  const metrics = settings.sampleData
+    ? nexusMetrics
+    : nexusMetrics.map((metric) => ({
+        ...metric,
+        value: '--',
+        delta: 'hidden',
+        trend: 'steady' as const,
+        caption: 'Sample data hidden for this workspace.',
+        sparkline: metric.sparkline.map(() => 0),
+      }))
+
   return (
     <div className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-      {nexusMetrics.map((m, i) => (
+      {metrics.map((m, i) => (
         <motion.div
           key={m.id}
+          data-metric-card
           initial={{ opacity: 0, y: 6 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, delay: 0.06 * i, ease: [0.16, 1, 0.3, 1] }}
@@ -37,7 +51,10 @@ export function MetricRow() {
             <div>
               <div className="text-[11.5px] text-[var(--color-ink-faint)]">{m.label}</div>
               <div className="mt-1.5 flex items-baseline gap-1.5">
-                <span className="text-[26px] font-semibold tracking-tight text-[var(--color-ink)] tabular-nums">
+                <span
+                  data-metric-value
+                  className="text-[26px] font-semibold tracking-tight text-[var(--color-ink)] tabular-nums"
+                >
                   {m.value}
                 </span>
               </div>

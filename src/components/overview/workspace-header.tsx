@@ -2,9 +2,11 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { ChevronDown, Filter, Plus } from 'lucide-react'
+import { useNexusSettings } from '@/lib/nexus-settings'
 
 export function WorkspaceHeader() {
   const [range, setRange] = useState<'7d' | '30d'>('7d')
+  const { settings } = useNexusSettings()
   const currentStamp = new Intl.DateTimeFormat(undefined, {
     weekday: 'long',
     hour: 'numeric',
@@ -23,16 +25,24 @@ export function WorkspaceHeader() {
           <span className="mono-label">{currentStamp}</span>
           <span className="h-1 w-1 rounded-full bg-[var(--color-ink-ghost)]" />
           <span className="flex min-w-0 items-center gap-1.5 text-[11.5px] text-[var(--color-ink-soft)]">
-            <span className="live-dot" />
-            <span className="truncate">3 workflows running - all systems nominal</span>
+            {settings.sampleData && <span className="live-dot" />}
+            <span className="truncate">
+              {settings.sampleData ? '3 workflows running - all systems nominal' : 'Sample data hidden - workspace quiet'}
+            </span>
           </span>
         </div>
         <h1 className="text-[26px] font-semibold tracking-tight text-[var(--color-ink)]">
-          Welcome back, Matthew.
+          {settings.sampleData ? 'Welcome back, Matthew.' : 'Workspace data hidden.'}
         </h1>
         <p className="max-w-full text-wrap text-[13px] leading-relaxed text-[var(--color-ink-soft)]">
-          Nexus handled <span className="font-medium text-[var(--color-ink)]">31 things</span> while you were away
-          {' '}-- <span className="font-medium text-[var(--color-violet)]">4 need your eyes</span>.
+          {settings.sampleData ? (
+            <>
+              Nexus handled <span className="font-medium text-[var(--color-ink)]">31 things</span> while you were away
+              {' '}-- <span className="font-medium text-[var(--color-violet)]">4 need your eyes</span>.
+            </>
+          ) : (
+            <>Seeded accounts, workflow events, and recommendations are hidden until sample data is restored.</>
+          )}
         </p>
       </div>
 

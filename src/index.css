@@ -337,6 +337,35 @@
     padding: 0.32rem 0.62rem;
   }
 
+  .nexus-compact [data-overview-page] {
+    gap: 0.85rem;
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+  }
+
+  .nexus-compact [data-metric-card] {
+    padding: 0.75rem;
+  }
+
+  .nexus-compact [data-metric-card] [data-metric-value] {
+    font-size: 1.25rem;
+  }
+
+  .nexus-compact [data-dashboard-panel='workflows'] > div:first-child {
+    padding-top: 0.6rem;
+    padding-bottom: 0.6rem;
+  }
+
+  .nexus-compact [data-workflow-row] {
+    gap: 0.5rem;
+    padding-top: 0.45rem;
+    padding-bottom: 0.45rem;
+  }
+
+  .nexus-compact [data-workflow-row-meta] {
+    display: none;
+  }
+
   .nexus-compact .status-pill {
     height: 20px;
     gap: 5px;
