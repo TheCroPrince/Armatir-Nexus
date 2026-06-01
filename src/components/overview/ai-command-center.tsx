@@ -5,6 +5,7 @@ import { Sparkles, Check, ChevronRight, X } from 'lucide-react'
 import { nexusRecommendations } from '@/data/nexus'
 import type { NexusAIRecommendation } from '@/types/nexus'
 import { cn } from '@/lib/cn'
+import { useNexusSettings } from '@/lib/nexus-settings'
 
 const categoryStyle: Record<NexusAIRecommendation['category'], { label: string; bg: string; text: string }> = {
   opportunity: { label: 'Opportunity', bg: 'bg-[oklch(94%_0.06_280)]', text: 'text-[oklch(42%_0.16_280)]' },
@@ -15,11 +16,17 @@ const categoryStyle: Record<NexusAIRecommendation['category'], { label: string; 
 
 export function AICommandCenter() {
   const navigate = useNavigate()
+  const { settings } = useNexusSettings()
   const [index, setIndex] = useState(0)
   const [dismissed, setDismissed] = useState<Set<string>>(new Set())
   const [notice, setNotice] = useState<string | null>(null)
 
-  const visible = nexusRecommendations.filter((r) => !dismissed.has(r.id))
+  const visible = nexusRecommendations.filter((r) =>
+    settings.aiTriage &&
+    !dismissed.has(r.id) &&
+    r.confidence * 100 >= settings.threshold &&
+    (settings.autoEscalation || r.category !== 'risk'),
+  )
   const current = visible[index % Math.max(visible.length, 1)]
 
   // Auto-cycle every 6.5s. Pauses while there's nothing to show.
@@ -63,7 +70,7 @@ export function AICommandCenter() {
           <div>
             <div className="text-[13px] font-medium text-[var(--color-ink)]">Nexus AI</div>
             <div className="text-[10.5px] text-[var(--color-ink-faint)]">
-              Operating · Claude 4.7 + GPT-4o ensemble
+              {settings.aiTriage ? 'Operating · Claude 4.7 + GPT-4o ensemble' : 'Paused · triage controls off'}
             </div>
           </div>
         </div>

@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Outlet } from 'react-router-dom'
+import { MotionConfig } from 'framer-motion'
 import { Sidebar } from './sidebar'
 import { Topbar } from './topbar'
 import { MobileNav } from './mobile-nav'
@@ -7,6 +8,12 @@ import { CommandPalette } from '@/components/shell/command-palette'
 import { NotificationsPanel } from '@/components/shell/notifications-panel'
 import { SettingsPanel } from '@/components/shell/settings-panel'
 import { nexusNotifications } from '@/data/nexus'
+import {
+  NexusSettingsContext,
+  defaultNexusSettings,
+  notificationAllowedBySettings,
+} from '@/lib/nexus-settings'
+import { cn } from '@/lib/cn'
 import type { NexusNotification } from '@/types/nexus'
 
 export function AppShell() {
@@ -14,6 +21,18 @@ export function AppShell() {
   const [notificationsOpen, setNotificationsOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [notifications, setNotifications] = useState<NexusNotification[]>(nexusNotifications)
+  const [settings, setSettings] = useState(defaultNexusSettings)
+
+  const updateSetting = useCallback(
+    <Key extends keyof typeof defaultNexusSettings>(key: Key, value: (typeof defaultNexusSettings)[Key]) => {
+      setSettings((current) => ({ ...current, [key]: value }))
+    },
+    [],
+  )
+
+  const resetSettings = useCallback(() => {
+    setSettings(defaultNexusSettings)
+  }, [])
 
   // ⌘K / Ctrl+K → palette. ESC → close any open overlay.
   useEffect(() => {
@@ -34,10 +53,37 @@ export function AppShell() {
     return () => window.removeEventListener('keydown', handler)
   }, [])
 
-  const unreadCount = notifications.filter((n) => !n.read).length
+  const visibleNotifications = useMemo(
+    () => notifications.filter((notification) => notificationAllowedBySettings(notification, settings)),
+    [notifications, settings],
+  )
+  const unreadCount = visibleNotifications.filter((n) => !n.read).length
+
+  function updateVisibleNotifications(nextVisible: NexusNotification[]) {
+    setNotifications((current) => current.map((notification) =>
+      nextVisible.find((next) => next.id === notification.id) ?? notification,
+    ))
+  }
 
   return (
-    <div className="nexus-canvas nexus-grain relative isolate min-h-dvh">
+    <NexusSettingsContext.Provider value={{ settings, updateSetting, resetSettings }}>
+      <MotionConfig reducedMotion={settings.reduceMotion ? 'always' : 'never'}>
+        <div
+          data-nexus-shell
+          data-ai-triage={settings.aiTriage ? 'on' : 'off'}
+          data-auto-escalation={settings.autoEscalation ? 'on' : 'off'}
+          data-density={settings.compactMode ? 'compact' : 'comfortable'}
+          data-daily-digest={settings.dailyDigest ? 'on' : 'off'}
+          data-email-alerts={settings.emailAlerts ? 'on' : 'off'}
+          data-motion={settings.reduceMotion ? 'reduced' : 'full'}
+          data-sample-data={settings.sampleData ? 'on' : 'off'}
+          data-slack-alerts={settings.slackAlerts ? 'on' : 'off'}
+          className={cn(
+            'nexus-canvas nexus-grain relative isolate min-h-dvh',
+            settings.compactMode && 'nexus-compact',
+            settings.reduceMotion && 'nexus-reduce-motion',
+          )}
+        >
       {/* Floating decorative blobs — anchor the painterly feel without overwhelming the UI */}
       <div
         className="pointer-events-none fixed inset-x-0 top-0 -z-10 h-[80vh] opacity-90"
@@ -71,11 +117,13 @@ export function AppShell() {
       <NotificationsPanel
         open={notificationsOpen}
         onClose={() => setNotificationsOpen(false)}
-        notifications={notifications}
-        onUpdate={setNotifications}
+        notifications={visibleNotifications}
+        onUpdate={updateVisibleNotifications}
       />
       <SettingsPanel open={settingsOpen} onClose={() => setSettingsOpen(false)} />
       <MobileNav onOpenSettings={() => { setSettingsOpen(true); setPaletteOpen(false); setNotificationsOpen(false) }} />
-    </div>
+        </div>
+      </MotionConfig>
+    </NexusSettingsContext.Provider>
   )
 }

@@ -12,6 +12,7 @@ import {
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { cn } from '@/lib/cn'
+import { useNexusSettings } from '@/lib/nexus-settings'
 
 interface SettingsPanelProps {
   open: boolean
@@ -84,15 +85,7 @@ function Section({
 export function SettingsPanel({ open, onClose }: SettingsPanelProps) {
   const panelRef = useRef<HTMLDivElement>(null)
   const restoreFocusRef = useRef<HTMLElement | null>(null)
-  const [aiTriage, setAiTriage] = useState(true)
-  const [autoEscalation, setAutoEscalation] = useState(true)
-  const [emailAlerts, setEmailAlerts] = useState(true)
-  const [slackAlerts, setSlackAlerts] = useState(true)
-  const [dailyDigest, setDailyDigest] = useState(false)
-  const [compactMode, setCompactMode] = useState(false)
-  const [reduceMotion, setReduceMotion] = useState(false)
-  const [sampleData, setSampleData] = useState(true)
-  const [threshold, setThreshold] = useState(86)
+  const { settings, updateSetting, resetSettings } = useNexusSettings()
   const [notice, setNotice] = useState('Changes apply to this session.')
 
   useEffect(() => {
@@ -129,16 +122,13 @@ export function SettingsPanel({ open, onClose }: SettingsPanelProps) {
     }
   }, [open, onClose])
 
+  function applySetting<Key extends keyof typeof settings>(key: Key, value: (typeof settings)[Key]) {
+    updateSetting(key, value)
+    setNotice('Changes applied to workspace.')
+  }
+
   function resetDemoSettings() {
-    setAiTriage(true)
-    setAutoEscalation(true)
-    setEmailAlerts(true)
-    setSlackAlerts(true)
-    setDailyDigest(false)
-    setCompactMode(false)
-    setReduceMotion(false)
-    setSampleData(true)
-    setThreshold(86)
+    resetSettings()
     setNotice('Demo settings reset.')
     window.setTimeout(() => setNotice('Changes apply to this session.'), 2200)
   }
@@ -195,19 +185,19 @@ export function SettingsPanel({ open, onClose }: SettingsPanelProps) {
 
               <div className="flex flex-col gap-3">
                 <Section icon={Sparkles} title="Nexus AI">
-                  <Toggle checked={aiTriage} onChange={setAiTriage} label="AI triage" description="Classify inbound work and prepare next actions." />
-                  <Toggle checked={autoEscalation} onChange={setAutoEscalation} label="Auto-escalation" description="Flag account-impacting items before SLA risk." />
+                  <Toggle checked={settings.aiTriage} onChange={(checked) => applySetting('aiTriage', checked)} label="AI triage" description="Classify inbound work and prepare next actions." />
+                  <Toggle checked={settings.autoEscalation} onChange={(checked) => applySetting('autoEscalation', checked)} label="Auto-escalation" description="Flag account-impacting items before SLA risk." />
                   <div className="px-2 py-2">
                     <div className="mb-2 flex items-center justify-between">
                       <span className="text-[12.5px] font-medium text-[var(--color-ink)]">Confidence threshold</span>
-                      <span className="font-mono text-[11px] text-[var(--color-violet)]">{threshold}%</span>
+                      <span className="font-mono text-[11px] text-[var(--color-violet)]">{settings.threshold}%</span>
                     </div>
                     <input
                       type="range"
                       min="60"
                       max="96"
-                      value={threshold}
-                      onChange={(e) => setThreshold(Number(e.target.value))}
+                      value={settings.threshold}
+                      onChange={(e) => applySetting('threshold', Number(e.target.value))}
                       className="w-full accent-[var(--color-violet)]"
                       aria-label="Confidence threshold"
                     />
@@ -215,18 +205,18 @@ export function SettingsPanel({ open, onClose }: SettingsPanelProps) {
                 </Section>
 
                 <Section icon={Bell} title="Notifications">
-                  <Toggle checked={emailAlerts} onChange={setEmailAlerts} label="Email alerts" description="Send review-ready drafts to the shared inbox." />
-                  <Toggle checked={slackAlerts} onChange={setSlackAlerts} label="Slack alerts" description="Post workflow exceptions to the operator channel." />
-                  <Toggle checked={dailyDigest} onChange={setDailyDigest} label="Daily digest" description="Roll up approvals, runs, and exceptions at 5pm." />
+                  <Toggle checked={settings.emailAlerts} onChange={(checked) => applySetting('emailAlerts', checked)} label="Email alerts" description="Send review-ready drafts to the shared inbox." />
+                  <Toggle checked={settings.slackAlerts} onChange={(checked) => applySetting('slackAlerts', checked)} label="Slack alerts" description="Post workflow exceptions to the operator channel." />
+                  <Toggle checked={settings.dailyDigest} onChange={(checked) => applySetting('dailyDigest', checked)} label="Daily digest" description="Roll up approvals, runs, and exceptions at 5pm." />
                 </Section>
 
                 <Section icon={MonitorCog} title="Appearance">
-                  <Toggle checked={compactMode} onChange={setCompactMode} label="Compact mode" description="Tighten list density for operations reviews." />
-                  <Toggle checked={reduceMotion} onChange={setReduceMotion} label="Reduce motion" description="Prefer calmer transitions in the demo UI." />
+                  <Toggle checked={settings.compactMode} onChange={(checked) => applySetting('compactMode', checked)} label="Compact mode" description="Tighten list density for operations reviews." />
+                  <Toggle checked={settings.reduceMotion} onChange={(checked) => applySetting('reduceMotion', checked)} label="Reduce motion" description="Prefer calmer transitions in the demo UI." />
                 </Section>
 
                 <Section icon={SlidersHorizontal} title="Demo controls">
-                  <Toggle checked={sampleData} onChange={setSampleData} label="Show sample data" description="Keep seeded accounts, workflows, and activity visible." />
+                  <Toggle checked={settings.sampleData} onChange={(checked) => applySetting('sampleData', checked)} label="Show sample data" description="Keep seeded accounts, workflows, and activity visible." />
                   <button
                     onClick={resetDemoSettings}
                     className="mt-1 flex w-full items-center justify-between rounded-xl border border-[var(--color-hairline-soft)] bg-white/55 px-3 py-2 text-left transition-colors hover:bg-white"

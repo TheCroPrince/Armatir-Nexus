@@ -6,6 +6,7 @@ import { getNexusIcon } from '@/types/nexus-icons'
 import type { ActivityStatus, NexusActivityEvent } from '@/types/nexus'
 import { relativeTime } from '@/lib/time'
 import { cn } from '@/lib/cn'
+import { useNexusSettings } from '@/lib/nexus-settings'
 
 const statusStyle: Record<ActivityStatus, { dot: string; ring: string }> = {
   success: { dot: 'bg-[var(--color-mint)]',  ring: 'shadow-[0_0_0_4px_oklch(72%_0.13_165_/_0.18)]' },
@@ -32,6 +33,7 @@ export function ActivityFeed({
   query = '',
   sinceMs,
 }: ActivityFeedProps) {
+  const { settings } = useNexusSettings()
   const [events, setEvents] = useState<NexusActivityEvent[]>(nexusActivitySeed)
   const [tick, setTick] = useState(0)
   const [now, setNow] = useState(() => Date.now())
@@ -39,6 +41,7 @@ export function ActivityFeed({
 
   // Prepend new events on a 3.4–5.8s irregular cadence so it never feels mechanical.
   useEffect(() => {
+    if (!settings.sampleData) return
     let cancelled = false
     function next() {
       if (cancelled) return
@@ -56,7 +59,7 @@ export function ActivityFeed({
     }
     next()
     return () => { cancelled = true }
-  }, [])
+  }, [settings.sampleData])
 
   // Re-render every 12s so relative timestamps stay fresh without driving heavy work.
   useEffect(() => {
@@ -70,7 +73,8 @@ export function ActivityFeed({
   const visibleEvents = useMemo(() => {
     const q = query.trim().toLowerCase()
     const cutoff = sinceMs ? now - sinceMs : null
-    return events.filter((event) => {
+    const sourceEvents = settings.sampleData ? events : []
+    return sourceEvents.filter((event) => {
       if (statusFilter !== 'all' && event.status !== statusFilter) return false
       if (cutoff && new Date(event.timestamp).getTime() < cutoff) return false
       if (!q) return true
@@ -82,7 +86,7 @@ export function ActivityFeed({
         integration?.name,
       ].filter(Boolean).some((value) => value!.toLowerCase().includes(q))
     })
-  }, [events, now, query, sinceMs, statusFilter])
+  }, [events, now, query, settings.sampleData, sinceMs, statusFilter])
 
   return (
     <div className={cn('glass relative flex flex-col overflow-hidden rounded-2xl', className)}>
@@ -94,7 +98,9 @@ export function ActivityFeed({
             </span>
             <div>
               <div className="text-[13px] font-medium text-[var(--color-ink)]">Live activity</div>
-              <div className="text-[10.5px] text-[var(--color-ink-faint)]">Streaming · last 24h</div>
+              <div className="text-[10.5px] text-[var(--color-ink-faint)]">
+                {settings.sampleData ? 'Streaming · last 24h' : 'Sample data hidden'}
+              </div>
             </div>
           </div>
           <div className="flex items-center gap-1.5">

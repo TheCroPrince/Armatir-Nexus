@@ -332,6 +332,35 @@
   .animate-drift         { animation: drift 6s ease-in-out infinite; }
   .animate-slide-in      { animation: slide-in-right 280ms var(--ease-out-expo) both; }
 
+  .nexus-compact .pill {
+    gap: 0.4rem;
+    padding: 0.32rem 0.62rem;
+  }
+
+  .nexus-compact .status-pill {
+    height: 20px;
+    gap: 5px;
+    padding: 0 7px;
+    font-size: 10px;
+  }
+
+  .nexus-compact .mono-label {
+    font-size: 10px;
+  }
+
+  .nexus-reduce-motion,
+  .nexus-reduce-motion * {
+    scroll-behavior: auto !important;
+  }
+
+  .nexus-reduce-motion *,
+  .nexus-reduce-motion *::before,
+  .nexus-reduce-motion *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
   @media (prefers-reduced-motion: reduce) {
     *,
     *::before,
