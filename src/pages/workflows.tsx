@@ -9,18 +9,25 @@ import { Sparkline } from '@/components/ui/sparkline'
 import type { NexusWorkflow } from '@/types/nexus'
 import { cn } from '@/lib/cn'
 
+function resolveWorkflowId(id: string | null, workflows: NexusWorkflow[]) {
+  return workflows.some((workflow) => workflow.id === id)
+    ? id!
+    : workflows[0]!.id
+}
+
 export function WorkflowsPage() {
   const [params, setParams] = useSearchParams()
-  const initial = params.get('w') ?? nexusWorkflows[0]!.id
   const [workflows, setWorkflows] = useState<NexusWorkflow[]>(nexusWorkflows)
-  const [selectedId, setSelectedId] = useState<string>(initial)
   const [query, setQuery] = useState('')
   const [filter, setFilter] = useState<'all' | NexusWorkflow['status']>('all')
   const [notice, setNotice] = useState<string | null>(null)
+  const selectedId = resolveWorkflowId(params.get('w'), workflows)
 
-  // Keep URL in sync with selection so the command palette can deep-link.
+  // Keep URL and selection in sync so deep links can land directly on a workflow.
   useEffect(() => {
-    if (params.get('w') !== selectedId) {
+    const requestedId = params.get('w')
+
+    if (requestedId !== selectedId) {
       const next = new URLSearchParams(params)
       next.set('w', selectedId)
       setParams(next, { replace: true })
@@ -121,7 +128,11 @@ export function WorkflowsPage() {
               return (
                 <li key={w.id}>
                   <button
-                    onClick={() => setSelectedId(w.id)}
+                    onClick={() => {
+                      const next = new URLSearchParams(params)
+                      next.set('w', w.id)
+                      setParams(next)
+                    }}
                     className={cn(
                       'group relative flex w-full flex-col gap-1 rounded-xl border px-3 py-2.5 text-left transition-all',
                       isActive
