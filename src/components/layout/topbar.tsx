@@ -66,7 +66,7 @@ export function Topbar({
         </div>
       </Link>
 
-      <div className="h-5 w-px bg-[var(--color-hairline)]" />
+      <div className="hidden h-5 w-px bg-[var(--color-hairline)] sm:block" />
 
       {/* Breadcrumb / location */}
       <div className="hidden md:flex items-center gap-2 text-[12.5px] text-[var(--color-ink-faint)]">
@@ -79,20 +79,16 @@ export function Topbar({
       <button
         onClick={openPalette}
         className="ml-auto group flex h-8 w-8 items-center justify-center rounded-full border border-[var(--color-hairline)] bg-white/70 text-[12px] text-[var(--color-ink-faint)] shadow-[var(--shadow-card)] transition-all hover:border-[var(--color-violet-soft)] hover:bg-white hover:text-[var(--color-ink-soft)] sm:w-auto sm:gap-2 sm:px-3 sm:py-1.5"
-        aria-label="Open command palette"
+        aria-label="Open command palette search"
       >
         <Search className="h-3.5 w-3.5" strokeWidth={1.8} />
-        <span className="hidden sm:inline">Search workflows, integrations…</span>
-        <span className="ml-1 hidden items-center gap-0.5 sm:flex">
-          <kbd>⌘</kbd>
-          <kbd>K</kbd>
-        </span>
+        <span className="hidden sm:inline">Search workflows, integrations...</span>
       </button>
 
       {/* Demo exit link */}
       <a
         href="https://armatir.com"
-        className="flex h-8 shrink-0 items-center gap-1.5 rounded-full border border-[var(--color-hairline)] bg-white/55 px-2.5 text-[12px] font-medium text-[var(--color-ink-soft)] shadow-[var(--shadow-card)] transition-all hover:border-[var(--color-violet-soft)] hover:bg-white hover:text-[var(--color-ink)] sm:px-3"
+        className="hidden h-8 shrink-0 items-center gap-1.5 rounded-full border border-[var(--color-hairline)] bg-white/55 px-2.5 text-[12px] font-medium text-[var(--color-ink-soft)] shadow-[var(--shadow-card)] transition-all hover:border-[var(--color-violet-soft)] hover:bg-white hover:text-[var(--color-ink)] sm:flex sm:px-3"
         aria-label="Back to the main Armatir website"
       >
         <ArrowLeft className="h-3.5 w-3.5" strokeWidth={1.8} />
@@ -138,7 +134,7 @@ export function Topbar({
           'ml-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[oklch(74%_0.16_50)] to-[oklch(66%_0.20_30)] text-[11px] font-semibold text-white shadow-[0_1px_2px_oklch(40%_0.15_30_/_0.3)] transition-transform hover:scale-[1.03] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-violet-soft)] active:scale-[0.98]',
           userMenuOpen && 'ring-2 ring-[var(--color-violet-soft)]',
         )}
-        aria-label="Account"
+        aria-label="Open account menu"
         aria-expanded={userMenuOpen}
         aria-haspopup="dialog"
       >

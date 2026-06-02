@@ -11,9 +11,9 @@ import { cn } from '@/lib/cn'
 
 const mobileNav = [
   { to: '/', label: 'Overview', icon: LayoutDashboard },
-  { to: '/workflows', label: 'Flows', icon: Workflow },
+  { to: '/workflows', label: 'Workflows', icon: Workflow },
   { to: '/inbox', label: 'Inbox', icon: InboxIcon },
-  { to: '/integrations', label: 'Tools', icon: Boxes },
+  { to: '/integrations', label: 'Integrations', icon: Boxes },
   { to: '/activity', label: 'Activity', icon: Radio },
 ]
 
@@ -28,8 +28,9 @@ export function MobileNav({ onOpenSettings }: { onOpenSettings: () => void }) {
           key={item.to}
           to={item.to}
           end={item.to === '/'}
+          aria-label={item.label}
           className={({ isActive }) => cn(
-            'flex min-w-0 flex-col items-center justify-center gap-0.5 rounded-xl px-0.5 py-1.5 text-[9.5px] font-medium transition-colors',
+            'flex min-w-0 flex-col items-center justify-center gap-0.5 rounded-xl px-0 py-1.5 text-[8.5px] font-medium transition-colors',
             isActive
               ? 'bg-white text-[var(--color-ink)] shadow-[var(--shadow-card)]'
               : 'text-[var(--color-ink-faint)] hover:text-[var(--color-ink-soft)]',
@@ -41,15 +42,15 @@ export function MobileNav({ onOpenSettings }: { onOpenSettings: () => void }) {
                 className={cn('h-4 w-4', isActive ? 'text-[var(--color-violet)]' : 'text-[var(--color-ink-faint)]')}
                 strokeWidth={1.8}
               />
-              <span className="truncate">{item.label}</span>
+              <span className="max-w-full truncate">{item.label}</span>
             </>
           )}
         </NavLink>
       ))}
       <button
         onClick={onOpenSettings}
-        className="flex min-w-0 flex-col items-center justify-center gap-0.5 rounded-xl px-0.5 py-1.5 text-[9.5px] font-medium text-[var(--color-ink-faint)] transition-colors hover:text-[var(--color-ink-soft)]"
-        aria-label="Open settings"
+        className="flex min-w-0 flex-col items-center justify-center gap-0.5 rounded-xl px-0 py-1.5 text-[8.5px] font-medium text-[var(--color-ink-faint)] transition-colors hover:text-[var(--color-ink-soft)]"
+        aria-label="Open workspace settings"
       >
         <Settings className="h-4 w-4 text-[var(--color-ink-faint)]" strokeWidth={1.8} />
         <span className="truncate">Settings</span>

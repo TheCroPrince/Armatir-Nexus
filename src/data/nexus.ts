@@ -37,7 +37,7 @@ export const nexusWorkflows: NexusWorkflow[] = [
     id: 'triage-inbound',
     name: 'Summarize inbound client inquiry',
     description:
-      'New thread in the shared inbox → classify intent, extract entities, post a triaged summary to the team channel.',
+      'New thread in the shared inbox: classify intent, extract entities, and post a triaged summary to the team channel.',
     category: 'support',
     status: 'running',
     lastRun: '38s ago',
@@ -117,7 +117,7 @@ export const nexusWorkflows: NexusWorkflow[] = [
     id: 'invoice-followup',
     name: 'Draft invoice follow-up email',
     description:
-      'Stripe invoice ages past due → draft a polite, account-specific follow-up tied to the client tone history.',
+      'Stripe invoice ages past due: draft a polite, account-specific follow-up tied to the client tone history.',
     category: 'finance',
     status: 'synced',
     lastRun: '17m ago',
@@ -290,7 +290,7 @@ export const nexusActivitySeed: NexusActivityEvent[] = [
   { id: 'evt-4', message: 'Follow-up draft generated — awaiting review',         source: 'claude', status: 'ai',      timestamp: new Date(Date.now() - 410_000).toISOString(), workflowId: 'overdue-escalation' },
   { id: 'evt-5', message: 'Calendar hold created for Friday 3:30pm',             source: 'gcal',   status: 'success', timestamp: new Date(Date.now() - 612_000).toISOString(), workflowId: 'schedule-recurring' },
   { id: 'evt-6', message: 'Workflow recovered after Stripe API delay',           source: 'stripe', status: 'warning', timestamp: new Date(Date.now() - 880_000).toISOString(), workflowId: 'invoice-followup' },
-  { id: 'evt-7', message: 'Meeting recap filed to Notion → /clients/acme',       source: 'notion', status: 'info',    timestamp: new Date(Date.now() -1_120_000).toISOString(), workflowId: 'meeting-recap' },
+  { id: 'evt-7', message: 'Meeting recap filed to Notion /clients/acme',         source: 'notion', status: 'info',    timestamp: new Date(Date.now() -1_120_000).toISOString(), workflowId: 'meeting-recap' },
   { id: 'evt-8', message: 'PR #482 merged + included in evening digest',         source: 'github', status: 'success', timestamp: new Date(Date.now() -1_380_000).toISOString(), workflowId: 'deploy-digest' },
 ]
 
@@ -302,7 +302,7 @@ export const nexusActivityPool: Array<Omit<NexusActivityEvent, 'id' | 'timestamp
   { message: 'Calendar conflict detected — alternative proposed',      source: 'gcal',     status: 'warning', workflowId: 'schedule-recurring' },
   { message: 'Invoice reminder queued for Northwind Logistics',        source: 'stripe',   status: 'info',    workflowId: 'invoice-followup' },
   { message: 'Pull request #482 merged + digest queued',               source: 'github',   status: 'success', workflowId: 'deploy-digest' },
-  { message: 'Recap filed to Notion → /clients/acme',                  source: 'notion',   status: 'info',    workflowId: 'meeting-recap' },
+  { message: 'Recap filed to Notion /clients/acme',                    source: 'notion',   status: 'info',    workflowId: 'meeting-recap' },
   { message: 'Linear issue ARM-219 closed',                            source: 'linear',   status: 'success', workflowId: 'sync-project-status' },
   { message: 'Claude flagged tone shift in Mercer thread',             source: 'claude',   status: 'ai',      workflowId: 'overdue-escalation' },
   { message: 'Slack alert: workflow "Lead routing" ran in 9.8s',       source: 'slack',    status: 'info',    workflowId: 'lead-routing' },

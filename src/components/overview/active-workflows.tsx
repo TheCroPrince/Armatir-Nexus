@@ -26,8 +26,9 @@ export function ActiveWorkflows() {
         <Link
           to="/workflows"
           className="group flex items-center gap-1 text-[11.5px] font-medium text-[var(--color-ink-soft)] hover:text-[var(--color-ink)]"
+          aria-label="See all workflows"
         >
-          See all
+          See all workflows
           <ArrowUpRight className="h-3 w-3 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
         </Link>
       </div>
@@ -44,6 +45,7 @@ export function ActiveWorkflows() {
               <Link
                 to={`/workflows?w=${w.id}`}
                 data-workflow-row
+                aria-label={`Open workflow ${w.name}`}
                 className={cn(
                   'group flex items-center gap-3 px-4 py-3 transition-colors',
                   'hover:bg-white/70',

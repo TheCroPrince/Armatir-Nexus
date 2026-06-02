@@ -23,6 +23,7 @@ import { cn } from '@/lib/cn'
 interface NotificationsPanelProps {
   open: boolean
   onClose: () => void
+  onOpenSettings: () => void
   notifications: NexusNotification[]
   onUpdate: (next: NexusNotification[]) => void
 }
@@ -39,7 +40,7 @@ const kindMeta: Record<NotificationKind, { icon: typeof Bell; tint: string; ring
   system:   { icon: AlertCircle,    tint: 'text-[oklch(42%_0.15_70)]',   ring: 'bg-[oklch(94%_0.05_75)]',  label: 'System' },
 }
 
-export function NotificationsPanel({ open, onClose, notifications, onUpdate }: NotificationsPanelProps) {
+export function NotificationsPanel({ open, onClose, onOpenSettings, notifications, onUpdate }: NotificationsPanelProps) {
   const navigate = useNavigate()
   const panelRef = useRef<HTMLDivElement>(null)
   const restoreFocusRef = useRef<HTMLElement | null>(null)
@@ -133,7 +134,7 @@ export function NotificationsPanel({ open, onClose, notifications, onUpdate }: N
           exit={{    opacity: 0, y: -6, scale: 0.98 }}
           transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
           // Anchored under the bell — right-aligned to viewport with comfortable inset.
-          className="glass-strong fixed right-3 top-[58px] z-40 w-[380px] overflow-hidden rounded-2xl md:right-5"
+          className="glass-strong fixed left-3 right-3 top-[58px] z-40 overflow-hidden rounded-2xl md:left-auto md:right-5 md:w-[380px]"
           role="dialog"
           aria-modal="true"
           aria-label="Notifications"
@@ -170,6 +171,7 @@ export function NotificationsPanel({ open, onClose, notifications, onUpdate }: N
                 <button
                   key={f}
                   onClick={() => setFilter(f)}
+                  aria-label={`Show ${f} notifications`}
                   className={cn(
                     'rounded-full px-2.5 py-1 text-[11px] font-medium capitalize transition-colors',
                     filter === f
@@ -208,6 +210,7 @@ export function NotificationsPanel({ open, onClose, notifications, onUpdate }: N
                     <li key={n.id}>
                       <button
                         onClick={() => activate(n)}
+                        aria-label={`${n.read ? 'Open' : 'Open unread'} notification: ${n.title}`}
                         className={cn(
                           'group flex w-full items-start gap-3 px-3 py-2.5 text-left transition-colors',
                           n.read ? 'hover:bg-white/60' : 'bg-[oklch(99%_0.012_285)] hover:bg-white',
@@ -283,13 +286,18 @@ export function NotificationsPanel({ open, onClose, notifications, onUpdate }: N
             <button
               onClick={() => { navigate('/activity'); onClose() }}
               className="flex items-center gap-1 rounded-full px-2 py-1 text-[11px] text-[var(--color-ink-soft)] transition-colors hover:bg-white hover:text-[var(--color-ink)]"
+              aria-label="Open activity log from notifications"
             >
               <MessageSquare className="h-3 w-3" strokeWidth={1.8} />
-              See in activity
+              Open activity log
             </button>
-            <button className="flex items-center gap-1 rounded-full px-2 py-1 text-[11px] text-[var(--color-ink-faint)] transition-colors hover:bg-white hover:text-[var(--color-ink-soft)]">
+            <button
+              onClick={onOpenSettings}
+              className="flex items-center gap-1 rounded-full px-2 py-1 text-[11px] text-[var(--color-ink-faint)] transition-colors hover:bg-white hover:text-[var(--color-ink-soft)]"
+              aria-label="Open notification settings"
+            >
               <Settings className="h-3 w-3" strokeWidth={1.8} />
-              Preferences
+              Notification settings
             </button>
           </div>
         </motion.div>

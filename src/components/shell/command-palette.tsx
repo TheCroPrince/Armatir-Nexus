@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Search, Sparkles, Workflow, Inbox as InboxIcon, Boxes, Radio, LayoutDashboard, ArrowRight } from 'lucide-react'
+import { Search, Sparkles, Workflow, Inbox as InboxIcon, Boxes, Radio, LayoutDashboard, ArrowRight, X } from 'lucide-react'
 import { nexusWorkflows, nexusIntegrations } from '@/data/nexus'
 import { cn } from '@/lib/cn'
 
@@ -82,7 +82,7 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
         group: 'Integrations' as const,
         action: () => { navigate('/integrations'); onClose() },
       })),
-      { id: 'ai-draft',   label: 'Draft a reply to the latest inbound', icon: Sparkles, group: 'AI actions', action: () => { navigate('/inbox'); onClose() }, hint: 'Claude · ⌘ ↵' },
+      { id: 'ai-draft',   label: 'Draft a reply to the latest inbound', icon: Sparkles, group: 'AI actions', action: () => { navigate('/inbox'); onClose() }, hint: 'Inbox action' },
       { id: 'ai-summary', label: 'Summarize today\'s activity',          icon: Sparkles, group: 'AI actions', action: () => { navigate('/activity'); onClose() }, hint: 'GPT-4o' },
     ]
   }, [navigate, onClose])
@@ -134,7 +134,7 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
     <AnimatePresence>
       {open && (
         <motion.div
-          className="fixed inset-0 z-50 flex items-start justify-center px-4 pt-[12vh]"
+          className="fixed inset-0 z-50 flex items-start justify-center px-3 pt-[8vh] sm:px-4 sm:pt-[12vh]"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -161,14 +161,21 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
                 ref={inputRef}
                 value={query}
                 onChange={(e) => { setQuery(e.target.value); setSelected(0) }}
-                placeholder="Search or run a command…"
+                placeholder="Search or run a command..."
                 className="flex-1 bg-transparent text-[14px] text-[var(--color-ink)] outline-none placeholder:text-[var(--color-ink-ghost)]"
                 role="combobox"
                 aria-expanded="true"
                 aria-controls="command-palette-results"
                 aria-activedescendant={activeCommand ? `command-${activeCommand.id}` : undefined}
               />
-              <kbd>esc</kbd>
+              <button
+                type="button"
+                onClick={onClose}
+                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[var(--color-ink-faint)] transition-colors hover:bg-[var(--color-canvas-deep)] hover:text-[var(--color-ink-soft)]"
+                aria-label="Close command palette"
+              >
+                <X className="h-3.5 w-3.5" strokeWidth={1.8} />
+              </button>
             </div>
 
             <div id="command-palette-results" className="max-h-[55vh] overflow-y-auto p-2" role="listbox" aria-label="Command results">
@@ -213,21 +220,9 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
               ))}
               {filtered.length === 0 && (
                 <div className="px-4 py-8 text-center text-[13px] text-[var(--color-ink-faint)]">
-                  No results — try a workflow name or "draft".
+                  No results. Try a workflow name or "draft".
                 </div>
               )}
-            </div>
-
-            <div className="flex items-center justify-between border-t border-[var(--color-hairline-soft)] bg-[oklch(99%_0.005_280_/_0.6)] px-3 py-2 text-[11px] text-[var(--color-ink-faint)]">
-              <span className="flex items-center gap-1.5">
-                <kbd>↑</kbd><kbd>↓</kbd> navigate
-              </span>
-              <span className="flex items-center gap-1.5">
-                <kbd>↵</kbd> run
-              </span>
-              <span className="flex items-center gap-1.5">
-                <Sparkles className="h-3 w-3 text-[var(--color-violet)]" /> Nexus is listening
-              </span>
             </div>
           </motion.div>
         </motion.div>

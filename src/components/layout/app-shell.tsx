@@ -43,7 +43,7 @@ export function AppShell() {
     saveNexusSettings(settings)
   }, [settings])
 
-  // ⌘K / Ctrl+K → palette. ESC → close any open overlay.
+  // Command palette shortcuts and Escape close handling.
   useEffect(() => {
     function handler(e: KeyboardEvent) {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
@@ -149,6 +149,7 @@ export function AppShell() {
       <NotificationsPanel
         open={notificationsOpen}
         onClose={() => setNotificationsOpen(false)}
+        onOpenSettings={() => { setSettingsOpen(true); setPaletteOpen(false); setNotificationsOpen(false) }}
         notifications={visibleNotifications}
         onUpdate={updateVisibleNotifications}
       />

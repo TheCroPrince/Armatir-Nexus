@@ -14,6 +14,11 @@ const categoryStyle: Record<NexusAIRecommendation['category'], { label: string; 
   risk:        { label: 'Risk',        bg: 'bg-[oklch(95%_0.04_25)]',  text: 'text-[oklch(42%_0.16_25)]' },
 }
 
+function recommendationLabel(rec: NexusAIRecommendation) {
+  const category = categoryStyle[rec.category].label.toLowerCase()
+  return rec.account ? `${rec.account} ${category}` : category
+}
+
 export function AICommandCenter() {
   const navigate = useNavigate()
   const { settings } = useNexusSettings()
@@ -70,16 +75,16 @@ export function AICommandCenter() {
           <div>
             <div className="text-[13px] font-medium text-[var(--color-ink)]">Nexus AI</div>
             <div className="text-[10.5px] text-[var(--color-ink-faint)]">
-              {settings.aiTriage ? 'Operating · Claude 4.7 + GPT-4o ensemble' : 'Paused · triage controls off'}
+              {settings.aiTriage ? 'Operating with Claude 4.7 + GPT-4o ensemble' : 'Paused: triage controls off'}
             </div>
           </div>
         </div>
 
         <div className="flex items-center gap-1">
-          {visible.map((_, i) => (
+          {visible.map((rec, i) => (
             <button
               key={i}
-              aria-label={`Recommendation ${i + 1}`}
+              aria-label={`Show ${recommendationLabel(rec)} recommendation`}
               onClick={() => setIndex(i)}
               className={cn('carousel-dot', i === (index % Math.max(visible.length, 1)) && 'is-active')}
             />
@@ -141,6 +146,7 @@ export function AICommandCenter() {
                 <button
                   onClick={() => dismiss(current.id)}
                   className="flex items-center gap-1 rounded-full px-2 py-1 text-[11.5px] text-[var(--color-ink-faint)] transition-colors hover:bg-[var(--color-canvas-deep)] hover:text-[var(--color-ink-soft)]"
+                  aria-label={`Dismiss ${recommendationLabel(current)} recommendation`}
                 >
                   <X className="h-3 w-3" /> Dismiss
                 </button>
@@ -148,6 +154,7 @@ export function AICommandCenter() {
                   <button
                     onClick={() => runAction(current)}
                     className="group flex items-center gap-1.5 rounded-full bg-[var(--color-ink)] px-3 py-1.5 text-[12px] font-medium text-white shadow-[var(--shadow-card)] transition-transform hover:scale-[1.02] active:scale-[0.98]"
+                    aria-label={`${current.action} for ${recommendationLabel(current)}`}
                   >
                     {current.action}
                     <ChevronRight className="h-3 w-3 transition-transform group-hover:translate-x-0.5" />
@@ -186,7 +193,7 @@ export function AICommandCenter() {
           </li>
           <li className="flex items-center gap-2 text-[11.5px] text-[var(--color-ink-soft)]">
             <Check className="h-3 w-3 shrink-0 text-[var(--color-mint)]" />
-            <span>Filed meeting recap → Notion /clients/acme</span>
+            <span>Filed meeting recap in Notion /clients/acme</span>
             <span className="ml-auto font-mono text-[10.5px] text-[var(--color-ink-faint)]">38m ago</span>
           </li>
         </ul>
