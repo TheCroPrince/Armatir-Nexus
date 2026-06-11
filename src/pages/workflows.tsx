@@ -2,12 +2,13 @@ import { useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Plus, Search, Clock, Activity as ActivityIcon, ChevronRight, Play, Pause, MoreHorizontal } from 'lucide-react'
-import { integrationsById, nexusWorkflows } from '@/data/nexus'
+import { integrationsById } from '@/data/nexus'
 import { StatusPill } from '@/components/ui/status-pill'
 import { IntegrationCluster, IntegrationChip } from '@/components/ui/integration-chip'
 import { Sparkline } from '@/components/ui/sparkline'
 import type { NexusWorkflow } from '@/types/nexus'
 import { cn } from '@/lib/cn'
+import { useNexusDemoState } from '@/lib/nexus-demo-state-context'
 
 function resolveWorkflowId(id: string | null, workflows: NexusWorkflow[]) {
   return workflows.some((workflow) => workflow.id === id)
@@ -17,11 +18,11 @@ function resolveWorkflowId(id: string | null, workflows: NexusWorkflow[]) {
 
 export function WorkflowsPage() {
   const [params, setParams] = useSearchParams()
-  const [workflows, setWorkflows] = useState<NexusWorkflow[]>(nexusWorkflows)
+  const { workflows, selectedWorkflowId, selectWorkflow, toggleWorkflow } = useNexusDemoState()
   const [query, setQuery] = useState('')
   const [filter, setFilter] = useState<'all' | NexusWorkflow['status']>('all')
   const [notice, setNotice] = useState<string | null>(null)
-  const selectedId = resolveWorkflowId(params.get('w'), workflows)
+  const selectedId = resolveWorkflowId(params.get('w') ?? selectedWorkflowId, workflows)
 
   // Keep URL and selection in sync so deep links can land directly on a workflow.
   useEffect(() => {
@@ -32,7 +33,11 @@ export function WorkflowsPage() {
       next.set('w', selectedId)
       setParams(next, { replace: true })
     }
-  }, [selectedId, params, setParams])
+
+    if (selectedWorkflowId !== selectedId) {
+      selectWorkflow(selectedId)
+    }
+  }, [selectedId, selectedWorkflowId, params, setParams, selectWorkflow])
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
@@ -53,16 +58,7 @@ export function WorkflowsPage() {
   }
 
   function toggleSelectedWorkflow() {
-    setWorkflows((current) => current.map((workflow) => {
-      if (workflow.id !== selected.id) return workflow
-      const isRunning = workflow.status === 'running'
-      return {
-        ...workflow,
-        status: isRunning ? 'paused' : 'running',
-        lastRun: isRunning ? workflow.lastRun : 'just now',
-        runsThisMonth: isRunning ? workflow.runsThisMonth : workflow.runsThisMonth + 1,
-      }
-    }))
+    toggleWorkflow(selected.id)
     announce(selected.status === 'running'
       ? `${selected.name} paused`
       : `${selected.name} queued and running now`)
@@ -133,6 +129,7 @@ export function WorkflowsPage() {
                     onClick={() => {
                       const next = new URLSearchParams(params)
                       next.set('w', w.id)
+                      selectWorkflow(w.id)
                       setParams(next)
                     }}
                     aria-label={`Select workflow ${w.name} (${w.id})`}

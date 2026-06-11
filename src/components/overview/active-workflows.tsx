@@ -1,15 +1,17 @@
 import { motion } from 'framer-motion'
 import { Link } from 'react-router-dom'
 import { ArrowUpRight, Clock, EyeOff } from 'lucide-react'
-import { nexusWorkflows } from '@/data/nexus'
 import { StatusPill } from '@/components/ui/status-pill'
 import { IntegrationCluster } from '@/components/ui/integration-chip'
 import { cn } from '@/lib/cn'
 import { useNexusSettings } from '@/lib/nexus-settings'
+import { useNexusDemoState } from '@/lib/nexus-demo-state-context'
 
 export function ActiveWorkflows() {
   const { settings } = useNexusSettings()
-  const sorted = [...nexusWorkflows].sort((a, b) => {
+  const { workflows } = useNexusDemoState()
+  const runningCount = workflows.filter((workflow) => workflow.status === 'running').length
+  const sorted = [...workflows].sort((a, b) => {
     const order = { review: 0, running: 1, ready: 2, synced: 3, paused: 4 }
     return order[a.status] - order[b.status]
   }).slice(0, 6)
@@ -20,7 +22,7 @@ export function ActiveWorkflows() {
         <div>
           <div className="text-[13px] font-medium text-[var(--color-ink)]">Active workflows</div>
           <div className="text-[10.5px] text-[var(--color-ink-faint)]">
-            {settings.sampleData ? '8 enabled · 3 running now' : '0 enabled · sample data hidden'}
+            {settings.sampleData ? `${workflows.length} enabled - ${runningCount} running now` : '0 enabled - sample data hidden'}
           </div>
         </div>
         <Link

@@ -16,6 +16,7 @@ import {
   saveNexusSettings,
 } from '@/lib/nexus-settings'
 import { cn } from '@/lib/cn'
+import { NexusDemoStateProvider } from '@/lib/nexus-demo-state'
 import type { NexusNotification } from '@/types/nexus'
 
 const dailyDigestTimestamp = new Date(Date.now() - 2 * 60_000).toISOString()
@@ -99,8 +100,9 @@ export function AppShell() {
 
   return (
     <NexusSettingsContext.Provider value={{ settings, updateSetting, resetSettings }}>
-      <MotionConfig reducedMotion={settings.reduceMotion ? 'always' : 'never'}>
-        <div
+      <NexusDemoStateProvider>
+        <MotionConfig reducedMotion={settings.reduceMotion ? 'always' : 'never'}>
+          <div
           data-nexus-shell
           data-ai-triage={settings.aiTriage ? 'on' : 'off'}
           data-auto-escalation={settings.autoEscalation ? 'on' : 'off'}
@@ -155,8 +157,9 @@ export function AppShell() {
       />
       <SettingsPanel open={settingsOpen} onClose={() => setSettingsOpen(false)} />
       <MobileNav onOpenSettings={() => { setSettingsOpen(true); setPaletteOpen(false); setNotificationsOpen(false) }} />
-        </div>
-      </MotionConfig>
+          </div>
+        </MotionConfig>
+      </NexusDemoStateProvider>
     </NexusSettingsContext.Provider>
   )
 }

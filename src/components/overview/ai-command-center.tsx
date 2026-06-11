@@ -6,6 +6,7 @@ import { nexusRecommendations } from '@/data/nexus'
 import type { NexusAIRecommendation } from '@/types/nexus'
 import { cn } from '@/lib/cn'
 import { useNexusSettings } from '@/lib/nexus-settings'
+import { useNexusDemoState } from '@/lib/nexus-demo-state-context'
 
 const categoryStyle: Record<NexusAIRecommendation['category'], { label: string; bg: string; text: string }> = {
   opportunity: { label: 'Opportunity', bg: 'bg-[oklch(94%_0.06_280)]', text: 'text-[oklch(42%_0.16_280)]' },
@@ -22,13 +23,13 @@ function recommendationLabel(rec: NexusAIRecommendation) {
 export function AICommandCenter() {
   const navigate = useNavigate()
   const { settings } = useNexusSettings()
+  const { dismissedRecommendationIds, dismissRecommendation } = useNexusDemoState()
   const [index, setIndex] = useState(0)
-  const [dismissed, setDismissed] = useState<Set<string>>(new Set())
   const [notice, setNotice] = useState<string | null>(null)
 
   const visible = nexusRecommendations.filter((r) =>
     settings.aiTriage &&
-    !dismissed.has(r.id) &&
+    !dismissedRecommendationIds.includes(r.id) &&
     r.confidence * 100 >= settings.threshold &&
     (settings.autoEscalation || r.category !== 'risk'),
   )
@@ -42,7 +43,7 @@ export function AICommandCenter() {
   }, [visible.length])
 
   function dismiss(id: string) {
-    setDismissed((s) => new Set(s).add(id))
+    dismissRecommendation(id)
   }
 
   function runAction(rec: NexusAIRecommendation) {

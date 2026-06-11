@@ -465,3 +465,12 @@ export const nexusInbox: InboxItem[] = [
     account: 'Mercer Group',
   },
 ]
+
+export const nexusDraftCopies: Record<string, string> = {
+  'in-001':
+    "Hi Priya - confirmed: Q3 onboarding kicks off the week of July 14. Below is the risk owner table you asked about. Happy to jump on Friday at 3:30 or Monday at 11 if a call is easier.",
+  'in-002':
+    "Hi Jordan - quick clarification on the tier delta: Tier 2 commits to a 4-hour first response, Tier 3 to 1-hour, both 24/7. I've attached a one-page comparison alongside the proposal.",
+  'in-003':
+    "Hi Northwind team - gentle reminder that INV-0481 ($4,820) is now 9 days past due. Let me know if there's anything blocking on your side - happy to extend the window by another week if needed.",
+}

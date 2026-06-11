@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Sparkles, Check, Pencil, Clock, MailWarning, ChevronRight, X, Send } from 'lucide-react'
-import { nexusInbox } from '@/data/nexus'
 import type { InboxItem } from '@/types/nexus'
 import { relativeTime } from '@/lib/time'
 import { cn } from '@/lib/cn'
+import { useNexusDemoState } from '@/lib/nexus-demo-state-context'
 
 const statusStyle: Record<InboxItem['status'], { label: string; bg: string; text: string }> = {
   queued:              { label: 'Queued',              bg: 'bg-[oklch(95%_0.018_285)]',    text: 'text-[var(--color-ink-soft)]' },
@@ -19,19 +19,16 @@ const priorityDot: Record<InboxItem['priority'], string> = {
   low:    'bg-[var(--color-ink-ghost)]',
 }
 
-const draftCopies: Record<string, string> = {
-  'in-001':
-    "Hi Priya — confirmed: Q3 onboarding kicks off the week of July 14. Below is the risk owner table you asked about. Happy to jump on Friday at 3:30 or Monday at 11 if a call is easier.",
-  'in-002':
-    "Hi Jordan — quick clarification on the tier delta: Tier 2 commits to a 4-hour first response, Tier 3 to 1-hour, both 24/7. I've attached a one-page comparison alongside the proposal.",
-  'in-003':
-    "Hi Northwind team — gentle reminder that INV-0481 ($4,820) is now 9 days past due. Let me know if there's anything blocking on your side — happy to extend the window by another week if needed.",
-}
-
 export function InboxPage() {
-  const [selectedId, setSelectedId] = useState<string>(nexusInbox[0]!.id)
-  const [items, setItems] = useState<InboxItem[]>(nexusInbox)
-  const [drafts, setDrafts] = useState<Record<string, string>>(draftCopies)
+  const {
+    inboxItems: items,
+    drafts,
+    selectedInboxId: selectedId,
+    selectInboxItem,
+    approveInboxItem,
+    dismissInboxItem,
+    updateDraft,
+  } = useNexusDemoState()
   const [editing, setEditing] = useState(false)
   const [draftText, setDraftText] = useState('')
   const [notice, setNotice] = useState<string | null>(null)
@@ -50,7 +47,7 @@ export function InboxPage() {
   }
 
   const approve = (id: string) => {
-    setItems((prev) => prev.map((i) => i.id === id ? { ...i, status: 'sent' } : i))
+    approveInboxItem(id)
     setEditing(false)
     announce('Draft approved and sent')
   }
@@ -61,13 +58,13 @@ export function InboxPage() {
   }
 
   function saveDraft() {
-    setDrafts((current) => ({ ...current, [selected.id]: draftText }))
+    updateDraft(selected.id, draftText)
     setEditing(false)
     announce('Draft updated')
   }
 
   function dismiss(id: string) {
-    setItems((prev) => prev.map((i) => i.id === id ? { ...i, status: 'queued' } : i))
+    dismissInboxItem(id)
     setEditing(false)
     announce('Item returned to queue')
   }
@@ -97,7 +94,7 @@ export function InboxPage() {
               return (
                 <li key={item.id}>
                   <button
-                    onClick={() => { setSelectedId(item.id); setEditing(false) }}
+                    onClick={() => { selectInboxItem(item.id); setEditing(false) }}
                     className={cn(
                       'group relative flex w-full flex-col gap-1 rounded-xl border px-3 py-2.5 text-left transition-all',
                       isActive
