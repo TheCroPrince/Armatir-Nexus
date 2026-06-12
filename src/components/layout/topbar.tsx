@@ -10,6 +10,7 @@ interface TopbarProps {
   onOpenSettings: () => void
   onToggleNotifications: () => void
   onAskNexus: () => void
+  askNexusOpen: boolean
   notificationsOpen: boolean
   unreadCount: number
 }
@@ -19,6 +20,7 @@ export function Topbar({
   onOpenSettings,
   onToggleNotifications,
   onAskNexus,
+  askNexusOpen,
   notificationsOpen,
   unreadCount,
 }: TopbarProps) {
@@ -99,10 +101,17 @@ export function Topbar({
       {/* Quick action — AI ask */}
       <button
         onClick={askNexus}
-        className="hidden lg:flex items-center gap-1.5 rounded-full bg-gradient-to-br from-[oklch(60%_0.22_295)] to-[oklch(55%_0.20_260)] px-3 py-1.5 text-[12px] font-medium text-white shadow-[0_8px_24px_oklch(55%_0.20_280_/_0.3)] transition-transform hover:scale-[1.02] active:scale-[0.98]"
+        className={cn(
+          'flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[oklch(60%_0.22_295)] to-[oklch(55%_0.20_260)] text-[12px] font-medium text-white shadow-[0_8px_24px_oklch(55%_0.20_280_/_0.3)] transition-transform hover:scale-[1.02] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-violet-soft)] active:scale-[0.98] lg:w-auto lg:gap-1.5 lg:px-3 lg:py-1.5',
+          askNexusOpen && 'ring-2 ring-[var(--color-violet-soft)]',
+        )}
+        aria-label="Ask Nexus"
+        aria-expanded={askNexusOpen}
+        aria-haspopup="dialog"
+        title="Ask Nexus"
       >
         <Sparkles className="h-3.5 w-3.5" strokeWidth={2} />
-        Ask Nexus
+        <span className="hidden lg:inline">Ask Nexus</span>
       </button>
 
       {/* Notifications */}

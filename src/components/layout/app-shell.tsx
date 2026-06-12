@@ -4,6 +4,7 @@ import { MotionConfig } from 'framer-motion'
 import { Sidebar } from './sidebar'
 import { Topbar } from './topbar'
 import { MobileNav } from './mobile-nav'
+import { AskNexusPanel } from '@/components/shell/ask-nexus-panel'
 import { CommandPalette } from '@/components/shell/command-palette'
 import { NotificationsPanel } from '@/components/shell/notifications-panel'
 import { SettingsPanel } from '@/components/shell/settings-panel'
@@ -23,6 +24,7 @@ const dailyDigestTimestamp = new Date(Date.now() - 2 * 60_000).toISOString()
 
 export function AppShell() {
   const [paletteOpen, setPaletteOpen] = useState(false)
+  const [askNexusOpen, setAskNexusOpen] = useState(false)
   const [notificationsOpen, setNotificationsOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [notifications, setNotifications] = useState<NexusNotification[]>(nexusNotifications)
@@ -50,11 +52,13 @@ export function AppShell() {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
         e.preventDefault()
         setPaletteOpen((o) => !o)
+        setAskNexusOpen(false)
         setNotificationsOpen(false)
         setSettingsOpen(false)
       }
       if (e.key === 'Escape') {
         setPaletteOpen(false)
+        setAskNexusOpen(false)
         setNotificationsOpen(false)
         setSettingsOpen(false)
       }
@@ -131,32 +135,34 @@ export function AppShell() {
       />
 
       <Topbar
-        onOpenPalette={() => { setPaletteOpen(true); setNotificationsOpen(false); setSettingsOpen(false) }}
-        onOpenSettings={() => { setSettingsOpen(true); setPaletteOpen(false); setNotificationsOpen(false) }}
-        onAskNexus={() => { setPaletteOpen(true); setNotificationsOpen(false); setSettingsOpen(false) }}
-        onToggleNotifications={() => { setNotificationsOpen((o) => !o); setPaletteOpen(false); setSettingsOpen(false) }}
+        onOpenPalette={() => { setPaletteOpen(true); setAskNexusOpen(false); setNotificationsOpen(false); setSettingsOpen(false) }}
+        onOpenSettings={() => { setSettingsOpen(true); setPaletteOpen(false); setAskNexusOpen(false); setNotificationsOpen(false) }}
+        onAskNexus={() => { setAskNexusOpen(true); setPaletteOpen(false); setNotificationsOpen(false); setSettingsOpen(false) }}
+        onToggleNotifications={() => { setNotificationsOpen((o) => !o); setPaletteOpen(false); setAskNexusOpen(false); setSettingsOpen(false) }}
+        askNexusOpen={askNexusOpen}
         notificationsOpen={notificationsOpen}
         unreadCount={unreadCount}
       />
 
       <div className="relative z-10 flex">
-        <Sidebar onOpenSettings={() => { setSettingsOpen(true); setPaletteOpen(false); setNotificationsOpen(false) }} />
+        <Sidebar onOpenSettings={() => { setSettingsOpen(true); setPaletteOpen(false); setAskNexusOpen(false); setNotificationsOpen(false) }} />
 
         <div className="flex-1 min-w-0 pb-20 md:pb-0">
           <Outlet />
         </div>
       </div>
 
+      <AskNexusPanel open={askNexusOpen} onClose={() => setAskNexusOpen(false)} />
       <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} />
       <NotificationsPanel
         open={notificationsOpen}
         onClose={() => setNotificationsOpen(false)}
-        onOpenSettings={() => { setSettingsOpen(true); setPaletteOpen(false); setNotificationsOpen(false) }}
+        onOpenSettings={() => { setSettingsOpen(true); setPaletteOpen(false); setAskNexusOpen(false); setNotificationsOpen(false) }}
         notifications={visibleNotifications}
         onUpdate={updateVisibleNotifications}
       />
       <SettingsPanel open={settingsOpen} onClose={() => setSettingsOpen(false)} />
-      <MobileNav onOpenSettings={() => { setSettingsOpen(true); setPaletteOpen(false); setNotificationsOpen(false) }} />
+      <MobileNav onOpenSettings={() => { setSettingsOpen(true); setPaletteOpen(false); setAskNexusOpen(false); setNotificationsOpen(false) }} />
           </div>
         </MotionConfig>
       </NexusDemoStateProvider>
