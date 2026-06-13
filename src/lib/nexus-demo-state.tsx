@@ -15,6 +15,7 @@ import {
   saveNexusDemoState,
   type NexusDemoState,
 } from './nexus-demo-state-storage'
+import { createWorkflowReuseInput, sanitizeWorkflowDraftName } from './nexus-workflow-drafts'
 import type { InboxItem, NexusActivityEvent, NexusIntegration, NexusNotification, NexusWorkflow } from '@/types/nexus'
 
 function resolveWorkflowId(id: string | null, workflows: NexusWorkflow[]) {
@@ -208,7 +209,8 @@ export function NexusDemoStateProvider({ children }: { children: ReactNode }) {
       status: 'ready',
       lastRun: 'not run yet',
       impact: input.impact.trim(),
-      steps: input.steps.map((step) => step.trim()).filter(Boolean).slice(0, 5),
+      ...(input.approvalRequirement ? { approvalRequirement: input.approvalRequirement } : {}),
+      steps: input.steps.map((step) => step.trim()).filter(Boolean).slice(0, 8),
       integrations: integrationIds.map((integrationId) => ({ id: integrationId })),
       avgDuration: '0.0s',
       runsThisMonth: 0,
@@ -252,6 +254,7 @@ export function NexusDemoStateProvider({ children }: { children: ReactNode }) {
       description: template.description,
       category: template.workflowCategory,
       impact: template.impact,
+      approvalRequirement: template.requiresApproval ? 'approval-required' : 'auto-run',
       steps: template.steps,
       integrationIds: template.integrationIds,
       templateId: template.id,
@@ -259,6 +262,100 @@ export function NexusDemoStateProvider({ children }: { children: ReactNode }) {
       sourceIntegrationId: template.triggerIntegrationId,
     })
   }, [createWorkflow])
+
+  const duplicateWorkflow = useCallback((id: string) => {
+    const sourceWorkflow = workflows.find((workflow) => workflow.id === id)
+    if (!sourceWorkflow) return null
+
+    const input = createWorkflowReuseInput(sourceWorkflow)
+    const existingIds = new Set(workflows.map((workflow) => workflow.id))
+    const knownIntegrationIds = new Set(integrations.map((integration) => integration.id))
+    const integrationIds = input.integrationIds.filter((integrationId) => knownIntegrationIds.has(integrationId)).slice(0, 4)
+    const sourceIntegrationId = input.sourceIntegrationId && integrationIds.includes(input.sourceIntegrationId)
+      ? input.sourceIntegrationId
+      : integrationIds[0] ?? 'openai'
+    const nextWorkflow: NexusWorkflow = {
+      id: createLocalId('local-workflow', input.name, existingIds),
+      name: input.name,
+      description: input.description,
+      category: input.category,
+      status: 'ready',
+      lastRun: 'not run yet',
+      impact: input.impact,
+      ...(input.approvalRequirement ? { approvalRequirement: input.approvalRequirement } : {}),
+      steps: input.steps.map((step) => step.trim()).filter(Boolean).slice(0, 8),
+      integrations: integrationIds.map((integrationId) => ({ id: integrationId })),
+      avgDuration: '0.0s',
+      runsThisMonth: 0,
+      sparkline: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    }
+
+    setState((current) => {
+      const event = createActivityEvent(
+        {
+          message: `Workflow reused as draft: ${sourceWorkflow.name}`,
+          source: sourceIntegrationId,
+          status: 'ai',
+          workflowId: nextWorkflow.id,
+        },
+        new Set(current.activityEvents.map((activity) => activity.id)),
+        `${nextWorkflow.id}-reuse-${sourceWorkflow.id}`,
+      )
+
+      return {
+        ...current,
+        customWorkflows: [nextWorkflow, ...current.customWorkflows],
+        customIntegrations: current.customIntegrations.map((integration) => integrationIds.includes(integration.id)
+          ? { ...integration, activeWorkflows: integration.activeWorkflows + 1 }
+          : integration),
+        activityEvents: upsertActivity(current.activityEvents, event),
+        selectedWorkflowId: nextWorkflow.id,
+      }
+    })
+
+    return nextWorkflow
+  }, [integrations, workflows])
+
+  const updateWorkflowDraft = useCallback((id: string, input: { name?: string; approvalRequirement?: NexusWorkflow['approvalRequirement']; steps?: string[] }) => {
+    let nextWorkflow: NexusWorkflow | null = null
+
+    setState((current) => {
+      const existingWorkflow = current.customWorkflows.find((workflow) => workflow.id === id)
+      if (!existingWorkflow) return current
+
+      nextWorkflow = {
+        ...existingWorkflow,
+        ...(input.name !== undefined ? { name: sanitizeWorkflowDraftName(input.name) } : {}),
+        ...(input.approvalRequirement ? { approvalRequirement: input.approvalRequirement } : {}),
+        ...(input.steps ? { steps: input.steps.map((step) => step.trim()).filter(Boolean).slice(0, 8) } : {}),
+      }
+
+      const changedName = input.name !== undefined && nextWorkflow.name !== existingWorkflow.name
+      const changedApproval = input.approvalRequirement !== undefined && nextWorkflow.approvalRequirement !== existingWorkflow.approvalRequirement
+      const changedSteps = input.steps !== undefined && nextWorkflow.steps.join('\n') !== existingWorkflow.steps.join('\n')
+      if (!changedName && !changedApproval && !changedSteps) return current
+
+      const event = createActivityEvent(
+        {
+          message: `${nextWorkflow.name} draft updated`,
+          source: nextWorkflow.integrations[0]?.id ?? 'openai',
+          status: 'info',
+          workflowId: nextWorkflow.id,
+        },
+        new Set(current.activityEvents.map((activity) => activity.id)),
+        `${nextWorkflow.id}-updated-${changedName ? 'name' : changedApproval ? 'approval' : 'steps'}`,
+      )
+
+      return {
+        ...current,
+        customWorkflows: current.customWorkflows.map((workflow) => workflow.id === id ? nextWorkflow! : workflow),
+        activityEvents: upsertActivity(current.activityEvents, event),
+        selectedWorkflowId: id,
+      }
+    })
+
+    return nextWorkflow
+  }, [])
 
   const createIntegration = useCallback((input: CreateIntegrationInput) => {
     const existingIds = new Set(integrations.map((integration) => integration.id))
@@ -498,6 +595,8 @@ export function NexusDemoStateProvider({ children }: { children: ReactNode }) {
     toggleWorkflow,
     createWorkflow,
     createWorkflowFromTemplate,
+    duplicateWorkflow,
+    updateWorkflowDraft,
     createIntegration,
     connectIntegration,
     pushActivityEvent,
@@ -525,6 +624,8 @@ export function NexusDemoStateProvider({ children }: { children: ReactNode }) {
     toggleWorkflow,
     createWorkflow,
     createWorkflowFromTemplate,
+    duplicateWorkflow,
+    updateWorkflowDraft,
     createIntegration,
     connectIntegration,
     pushActivityEvent,

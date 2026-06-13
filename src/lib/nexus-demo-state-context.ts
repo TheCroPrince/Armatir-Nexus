@@ -1,11 +1,12 @@
 import { createContext, useContext } from 'react'
-import type { InboxItem, NexusActivityEvent, NexusIntegration, NexusNotification, NexusWorkflow } from '@/types/nexus'
+import type { InboxItem, NexusActivityEvent, NexusIntegration, NexusNotification, NexusWorkflow, WorkflowApprovalRequirement } from '@/types/nexus'
 
 export interface CreateWorkflowInput {
   name: string
   description: string
   category: NexusWorkflow['category']
   impact: string
+  approvalRequirement?: WorkflowApprovalRequirement
   steps: string[]
   integrationIds: string[]
   templateId?: string
@@ -29,6 +30,12 @@ export type PushNotificationInput = Omit<NexusNotification, 'id' | 'timestamp' |
   read?: boolean
 }
 
+export interface UpdateWorkflowDraftInput {
+  name?: string
+  approvalRequirement?: WorkflowApprovalRequirement
+  steps?: string[]
+}
+
 export interface NexusDemoStateContextValue {
   workflows: NexusWorkflow[]
   integrations: NexusIntegration[]
@@ -45,6 +52,8 @@ export interface NexusDemoStateContextValue {
   toggleWorkflow: (id: string) => NexusWorkflow | null
   createWorkflow: (input: CreateWorkflowInput) => NexusWorkflow
   createWorkflowFromTemplate: (templateId: string) => NexusWorkflow | null
+  duplicateWorkflow: (id: string) => NexusWorkflow | null
+  updateWorkflowDraft: (id: string, input: UpdateWorkflowDraftInput) => NexusWorkflow | null
   createIntegration: (input: CreateIntegrationInput) => NexusIntegration
   connectIntegration: (id: string) => NexusIntegration | null
   pushActivityEvent: (input: PushActivityEventInput) => NexusActivityEvent

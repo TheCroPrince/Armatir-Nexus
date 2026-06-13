@@ -1,13 +1,15 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Plus, Search, Clock, Activity as ActivityIcon, ChevronRight, Play, Pause, MoreHorizontal, X, Sparkles, CheckCircle2, ShieldCheck, Timer } from 'lucide-react'
+import { Plus, Search, Clock, Activity as ActivityIcon, ChevronRight, Play, Pause, MoreHorizontal, X, Sparkles, CheckCircle2, ShieldCheck, Timer, RotateCcw, ArrowUp, ArrowDown, Copy, Save } from 'lucide-react'
 import { StatusPill } from '@/components/ui/status-pill'
 import { IntegrationCluster, IntegrationChip } from '@/components/ui/integration-chip'
 import { Sparkline } from '@/components/ui/sparkline'
 import { nexusWorkflowTemplates } from '@/data/nexus'
-import type { NexusIntegration, NexusWorkflow, NexusWorkflowTemplate, WorkflowTemplateCategory } from '@/types/nexus'
+import type { NexusIntegration, NexusWorkflow, NexusWorkflowTemplate, WorkflowApprovalRequirement, WorkflowTemplateCategory } from '@/types/nexus'
 import { cn } from '@/lib/cn'
+import { isDraftWorkflow } from '@/lib/nexus-demo-labels'
+import { applyWorkflowStepAction } from '@/lib/nexus-workflow-drafts'
 import { useNexusDemoState } from '@/lib/nexus-demo-state-context'
 
 const workflowTemplateCategoryOrder: Array<WorkflowTemplateCategory | 'all'> = [
@@ -45,12 +47,23 @@ export function WorkflowsPage() {
     selectWorkflow,
     toggleWorkflow,
     createWorkflowFromTemplate,
+    duplicateWorkflow,
+    updateWorkflowDraft,
   } = useNexusDemoState()
   const [query, setQuery] = useState('')
   const [filter, setFilter] = useState<'all' | NexusWorkflow['status']>('all')
   const [notice, setNotice] = useState<string | null>(null)
   const [isCreateOpen, setIsCreateOpen] = useState(false)
-  const selectedId = resolveWorkflowId(params.get('w') ?? selectedWorkflowId, workflows)
+  const [optimisticWorkflow, setOptimisticWorkflow] = useState<NexusWorkflow | null>(null)
+  const requestedWorkflowId = params.get('w') ?? selectedWorkflowId
+  const optimisticIsPending = optimisticWorkflow &&
+    optimisticWorkflow.id === requestedWorkflowId &&
+    !workflows.some((workflow) => workflow.id === optimisticWorkflow.id)
+  const workflowList = useMemo(
+    () => optimisticIsPending ? [optimisticWorkflow, ...workflows] : workflows,
+    [optimisticIsPending, optimisticWorkflow, workflows],
+  )
+  const selectedId = resolveWorkflowId(requestedWorkflowId, workflowList)
 
   // Keep URL and selection in sync so deep links can land directly on a workflow.
   useEffect(() => {
@@ -69,16 +82,16 @@ export function WorkflowsPage() {
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
-    return workflows.filter((w) => {
+    return workflowList.filter((w) => {
       if (filter !== 'all' && w.status !== filter) return false
       if (!q) return true
       return [w.name, w.description, w.impact].some((s) => s.toLowerCase().includes(q))
     })
-  }, [query, filter, workflows])
+  }, [query, filter, workflowList])
 
-  const selected = workflows.find((w) => w.id === selectedId) ?? workflows[0]!
-  const runningCount = workflows.filter((w) => w.status === 'running').length
-  const reviewCount = workflows.filter((w) => w.status === 'review').length
+  const selected = workflowList.find((w) => w.id === selectedId) ?? workflowList[0]!
+  const runningCount = workflowList.filter((w) => w.status === 'running').length
+  const reviewCount = workflowList.filter((w) => w.status === 'review').length
 
   function announce(message: string) {
     setNotice(message)
@@ -101,11 +114,52 @@ export function WorkflowsPage() {
 
     const next = new URLSearchParams(params)
     next.set('w', workflow.id)
+    setOptimisticWorkflow(workflow)
+    selectWorkflow(workflow.id)
     setParams(next)
     setFilter('all')
     setQuery('')
     setIsCreateOpen(false)
     announce(`${workflow.name} draft created`)
+  }
+
+  function handleUseAgain() {
+    const workflow = duplicateWorkflow(selected.id)
+    if (!workflow) {
+      announce('Workflow unavailable')
+      return
+    }
+
+    const next = new URLSearchParams(params)
+    next.set('w', workflow.id)
+    setOptimisticWorkflow(workflow)
+    selectWorkflow(workflow.id)
+    setParams(next)
+    setFilter('all')
+    setQuery('')
+    announce(`${selected.name} copied as a draft`)
+  }
+
+  function handleRenameDraft(name: string) {
+    const workflow = updateWorkflowDraft(selected.id, { name })
+    if (workflow) {
+      announce(`${workflow.name} renamed`)
+    }
+  }
+
+  function handleApprovalChange(approvalRequirement: NexusWorkflow['approvalRequirement']) {
+    const workflow = updateWorkflowDraft(selected.id, { approvalRequirement })
+    if (workflow) {
+      announce(`${workflow.name} approval updated`)
+    }
+  }
+
+  function handleStepAction(action: Parameters<typeof applyWorkflowStepAction>[1]) {
+    const steps = applyWorkflowStepAction(selected.steps, action)
+    const workflow = updateWorkflowDraft(selected.id, { steps })
+    if (workflow) {
+      announce(`${workflow.name} steps updated`)
+    }
   }
 
   return (
@@ -118,7 +172,7 @@ export function WorkflowsPage() {
               Workflows
             </h1>
             <p className="mt-0.5 text-[11.5px] text-[var(--color-ink-faint)]">
-              {workflows.length} enabled · {runningCount} running · {reviewCount} needs review
+              {workflowList.length} enabled · {runningCount} running · {reviewCount} needs review
             </p>
           </div>
           <button
@@ -188,7 +242,7 @@ export function WorkflowsPage() {
                       <span className="line-clamp-1 text-[13px] font-medium text-[var(--color-ink)]">
                         {w.name}
                       </span>
-                      <StatusPill status={w.status} className="shrink-0" />
+                      <WorkflowStatePill workflow={w} className="shrink-0" />
                     </div>
                     <p className="line-clamp-1 text-[11.5px] text-[var(--color-ink-faint)]">
                       {w.impact}
@@ -226,8 +280,17 @@ export function WorkflowsPage() {
             <DetailHeader
               workflow={selected}
               onToggle={toggleSelectedWorkflow}
+              onUseAgain={handleUseAgain}
               onMenu={() => announce('Workflow actions opened')}
             />
+            {isDraftWorkflow(selected) && (
+              <DraftControls
+                workflow={selected}
+                onRename={handleRenameDraft}
+                onApprovalChange={handleApprovalChange}
+                onStepAction={handleStepAction}
+              />
+            )}
             <DetailFlow workflow={selected} integrationIndex={integrationsById} />
             <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
               <DetailMeta workflow={selected} integrationIndex={integrationsById} />
@@ -442,22 +505,195 @@ function TemplateFact({
 
 // ─── Detail panel sub-components ─────────────────────────────────────────────
 
+function WorkflowStatePill({ workflow, className, pulse = false }: { workflow: NexusWorkflow; className?: string; pulse?: boolean }) {
+  if (!isDraftWorkflow(workflow)) {
+    return <StatusPill status={workflow.status} className={className} pulse={pulse} />
+  }
+
+  return (
+    <span className={cn('status-pill bg-[oklch(95%_0.04_285)] text-[var(--color-violet)]', className)}>
+      <span className="bg-[var(--color-violet-soft)]" />
+      Draft
+    </span>
+  )
+}
+
+function DraftSetupStrip() {
+  return (
+    <div className="mt-2 flex max-w-xl flex-wrap items-center gap-2 rounded-xl border border-[oklch(84%_0.06_285)] bg-white/65 px-3 py-2 shadow-[var(--shadow-card)]">
+      <span className="mono-label text-[var(--color-violet)]">Draft setup</span>
+      <span className="hidden h-4 w-px bg-[var(--color-hairline)] sm:block" />
+      {['Review steps', 'Test run', 'Activate'].map((item, index) => (
+        <span key={item} className="flex items-center gap-1.5 text-[11.5px] font-medium text-[var(--color-ink-soft)]">
+          <span className="flex h-4 min-w-4 items-center justify-center rounded-full border border-[oklch(82%_0.06_285)] bg-white text-[9px] font-semibold text-[var(--color-violet)]">
+            {index + 1}
+          </span>
+          <span>{item}</span>
+        </span>
+      ))}
+    </div>
+  )
+}
+
+const approvalOptions: Array<{ value: WorkflowApprovalRequirement; label: string }> = [
+  { value: 'approval-required', label: 'Approval required' },
+  { value: 'optional-review', label: 'Optional review' },
+  { value: 'auto-run', label: 'Runs automatically' },
+]
+
+function DraftControls({
+  workflow,
+  onRename,
+  onApprovalChange,
+  onStepAction,
+}: {
+  workflow: NexusWorkflow
+  onRename: (name: string) => void
+  onApprovalChange: (approvalRequirement: WorkflowApprovalRequirement) => void
+  onStepAction: (action: Parameters<typeof applyWorkflowStepAction>[1]) => void
+}) {
+  const [name, setName] = useState(workflow.name)
+  const approvalRequirement = workflow.approvalRequirement ?? 'optional-review'
+
+  return (
+    <section className="glass rounded-2xl p-5" aria-label="Draft setup controls">
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(260px,0.85fr)_1fr]">
+        <div className="flex flex-col gap-4">
+          <label className="flex flex-col gap-1.5">
+            <span className="mono-label">Name</span>
+            <div className="flex items-center gap-2">
+              <input
+                value={name}
+                onChange={(event) => setName(event.target.value)}
+                onBlur={() => {
+                  if (name.trim() !== workflow.name) onRename(name)
+                }}
+                className="min-h-9 flex-1 rounded-xl border border-[var(--color-hairline-soft)] bg-white/65 px-3 text-[13px] font-medium text-[var(--color-ink)] outline-none transition-colors focus:border-[oklch(76%_0.10_285)]"
+                aria-label="Workflow draft name"
+              />
+              <button
+                type="button"
+                onClick={() => onRename(name)}
+                className="pill !h-9 !px-3"
+                aria-label={`Rename workflow draft ${workflow.name}`}
+              >
+                <Save className="h-3.5 w-3.5" strokeWidth={1.8} />
+                <span>Save</span>
+              </button>
+            </div>
+          </label>
+
+          <div className="flex flex-col gap-1.5">
+            <div className="mono-label">Approval</div>
+            <div className="flex flex-wrap gap-1.5" role="group" aria-label="Approval requirement">
+              {approvalOptions.map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => onApprovalChange(option.value)}
+                  aria-pressed={approvalRequirement === option.value}
+                  className={cn(
+                    'rounded-full px-3 py-1.5 text-[11.5px] font-medium transition-colors',
+                    approvalRequirement === option.value
+                      ? 'bg-[var(--color-ink)] text-white shadow-[var(--shadow-card)]'
+                      : 'bg-white/65 text-[var(--color-ink-faint)] hover:bg-white hover:text-[var(--color-ink)]',
+                  )}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div className="mb-2 flex items-center justify-between gap-3">
+            <div className="mono-label">Steps</div>
+            <span className="font-mono text-[10.5px] text-[var(--color-ink-faint)]">{workflow.steps.length}/8</span>
+          </div>
+          <ol className="flex flex-col gap-1.5">
+            {workflow.steps.map((step, index) => (
+              <li key={`${step}-${index}`} className="flex items-center gap-2 rounded-xl border border-[var(--color-hairline-soft)] bg-white/55 px-2.5 py-2">
+                <span className="flex h-6 min-w-6 items-center justify-center rounded-full bg-white font-mono text-[10.5px] font-medium text-[var(--color-ink-soft)] shadow-[inset_0_0_0_1px_var(--color-hairline-soft)]">
+                  {index + 1}
+                </span>
+                <span className="min-w-0 flex-1 text-[12.5px] leading-snug text-[var(--color-ink)]">{step}</span>
+                <div className="flex shrink-0 items-center gap-1">
+                  <IconDraftButton
+                    label={`Move step ${index + 1} up`}
+                    disabled={index === 0}
+                    onClick={() => onStepAction({ type: 'move-up', index })}
+                  >
+                    <ArrowUp className="h-3.5 w-3.5" strokeWidth={1.8} />
+                  </IconDraftButton>
+                  <IconDraftButton
+                    label={`Move step ${index + 1} down`}
+                    disabled={index === workflow.steps.length - 1}
+                    onClick={() => onStepAction({ type: 'move-down', index })}
+                  >
+                    <ArrowDown className="h-3.5 w-3.5" strokeWidth={1.8} />
+                  </IconDraftButton>
+                  <IconDraftButton
+                    label={`Copy step ${index + 1}`}
+                    disabled={workflow.steps.length >= 8}
+                    onClick={() => onStepAction({ type: 'copy', index })}
+                  >
+                    <Copy className="h-3.5 w-3.5" strokeWidth={1.8} />
+                  </IconDraftButton>
+                </div>
+              </li>
+            ))}
+          </ol>
+        </div>
+      </div>
+    </section>
+  )
+}
+
+function IconDraftButton({
+  label,
+  disabled = false,
+  onClick,
+  children,
+}: {
+  label: string
+  disabled?: boolean
+  onClick: () => void
+  children: ReactNode
+}) {
+  return (
+    <button
+      type="button"
+      title={label}
+      aria-label={label}
+      disabled={disabled}
+      onClick={onClick}
+      className="flex h-7 w-7 items-center justify-center rounded-full text-[var(--color-ink-faint)] transition-colors hover:bg-white hover:text-[var(--color-ink)] disabled:cursor-not-allowed disabled:opacity-35"
+    >
+      {children}
+    </button>
+  )
+}
+
 function DetailHeader({
   workflow,
   onToggle,
+  onUseAgain,
   onMenu,
 }: {
   workflow: NexusWorkflow
   onToggle: () => void
+  onUseAgain: () => void
   onMenu: () => void
 }) {
   const isRunning = workflow.status === 'running'
+  const isDraft = isDraftWorkflow(workflow)
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex flex-col gap-2">
           <div className="flex flex-wrap items-center gap-2">
-            <StatusPill status={workflow.status} pulse />
+            <WorkflowStatePill workflow={workflow} pulse />
             <span className="chip rounded-full px-2 py-0.5 text-[10.5px] capitalize text-[var(--color-ink-soft)]">
               {workflow.category}
             </span>
@@ -474,9 +710,18 @@ function DetailHeader({
           <p className="max-w-xl text-[13.5px] leading-relaxed text-[var(--color-ink-soft)]">
             {workflow.description}
           </p>
+          {isDraft && <DraftSetupStrip />}
         </div>
 
         <div className="flex items-center justify-end gap-1.5 sm:shrink-0">
+          <button
+            className="pill !py-1.5"
+            onClick={onUseAgain}
+            aria-label={`Use workflow ${workflow.name} again`}
+          >
+            <RotateCcw className="h-3.5 w-3.5" strokeWidth={1.8} />
+            <span>Use again</span>
+          </button>
           <button
             className="pill !py-1.5"
             onClick={onMenu}

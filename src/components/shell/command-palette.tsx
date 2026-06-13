@@ -2,8 +2,10 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Search, Sparkles, Workflow, Inbox as InboxIcon, Boxes, Radio, LayoutDashboard, ArrowRight, X } from 'lucide-react'
-import { nexusWorkflows, nexusIntegrations } from '@/data/nexus'
+import { nexusIntegrations } from '@/data/nexus'
 import { cn } from '@/lib/cn'
+import { isDraftWorkflow } from '@/lib/nexus-demo-labels'
+import { useNexusDemoState } from '@/lib/nexus-demo-state-context'
 
 interface CommandPaletteProps {
   open: boolean
@@ -22,6 +24,7 @@ type Command = {
 
 export function CommandPalette({ open, onClose }: CommandPaletteProps) {
   const navigate = useNavigate()
+  const { workflows } = useNexusDemoState()
   const inputRef = useRef<HTMLInputElement>(null)
   const restoreFocusRef = useRef<HTMLElement | null>(null)
   const [query, setQuery] = useState('')
@@ -66,14 +69,18 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
       { id: 'go-inbox', label: 'Go to Inbox',               icon: InboxIcon,       group: 'Navigate', action: navTo('/inbox'),        keywords: 'queue triage' },
       { id: 'go-integ', label: 'Go to Integrations',        icon: Boxes,           group: 'Navigate', action: navTo('/integrations'), keywords: 'tools connections' },
       { id: 'go-activity', label: 'Go to Activity',         icon: Radio,           group: 'Navigate', action: navTo('/activity'),     keywords: 'events log live' },
-      ...nexusWorkflows.map((w) => ({
-        id: `wf-${w.id}`,
-        label: w.name,
-        hint: w.impact,
-        icon: Workflow,
-        group: 'Workflows' as const,
-        action: () => { navigate(`/workflows?w=${w.id}`); onClose() },
-      })),
+      ...workflows.map((w) => {
+        const isDraft = isDraftWorkflow(w)
+        return {
+          id: `wf-${w.id}`,
+          label: w.name,
+          hint: isDraft ? `Draft - ${w.impact}` : w.impact,
+          icon: Workflow,
+          group: 'Workflows' as const,
+          action: () => { navigate(`/workflows?w=${w.id}`); onClose() },
+          keywords: isDraft ? `draft local ${w.category}` : w.category,
+        }
+      }),
       ...nexusIntegrations.map((i) => ({
         id: `int-${i.id}`,
         label: `${i.name} integration`,
@@ -85,7 +92,7 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
       { id: 'ai-draft',   label: 'Draft a reply to the latest inbound', icon: Sparkles, group: 'AI actions', action: () => { navigate('/inbox'); onClose() }, hint: 'Inbox action' },
       { id: 'ai-summary', label: 'Summarize today\'s activity',          icon: Sparkles, group: 'AI actions', action: () => { navigate('/activity'); onClose() }, hint: 'GPT-4o' },
     ]
-  }, [navigate, onClose])
+  }, [navigate, onClose, workflows])
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()

@@ -8,8 +8,14 @@ import {
 import {
   formatRunningWorkflowSummary,
   formatWorkflowCount,
+  isDraftWorkflow,
   workflowActivityHref,
 } from '../src/lib/nexus-demo-labels.ts'
+import {
+  applyWorkflowStepAction,
+  createWorkflowReuseInput,
+  sanitizeWorkflowDraftName,
+} from '../src/lib/nexus-workflow-drafts.ts'
 
 const nexusData = await import('../src/data/nexus.ts')
 
@@ -133,6 +139,7 @@ const templateDraftState = normalizeNexusDemoState({
       status: 'ready',
       lastRun: 'not run yet',
       impact: 'Saves 45 min / inquiry',
+      approvalRequirement: 'approval-required',
       steps: ['Watch Gmail for customer questions', 'Draft response with Claude', 'Post review request in Slack'],
       integrations: [{ id: 'gmail' }, { id: 'claude' }, { id: 'slack' }],
       avgDuration: '0.0s',
@@ -154,6 +161,7 @@ const templateDraftState = normalizeNexusDemoState({
 })
 
 assert.equal(templateDraftState.customWorkflows[0].id, 'local-workflow-reply-to-customer-inquiry')
+assert.equal(templateDraftState.customWorkflows[0].approvalRequirement, 'approval-required')
 assert.equal(templateDraftState.selectedWorkflowId, 'local-workflow-reply-to-customer-inquiry')
 assert.match(templateDraftState.activityEvents[0].message, /from template/)
 assert.equal(templateDraftState.activityEvents[0].workflowId, 'local-workflow-reply-to-customer-inquiry')
@@ -165,6 +173,37 @@ assert.equal(formatRunningWorkflowSummary(3), '3 workflows running')
 assert.equal(workflowActivityHref({ workflowId: 'local-workflow-reply-to-customer-inquiry' }), '/workflows?w=local-workflow-reply-to-customer-inquiry')
 assert.equal(workflowActivityHref({ workflowId: 'sync project status' }), '/workflows?w=sync+project+status')
 assert.equal(workflowActivityHref({}), undefined)
+assert.equal(isDraftWorkflow(templateDraftState.customWorkflows[0]), true)
+assert.equal(isDraftWorkflow({ ...templateDraftState.customWorkflows[0], status: 'running', runsThisMonth: 1 }), false)
+assert.equal(isDraftWorkflow({ ...templateDraftState.customWorkflows[0], id: 'triage-inbound' }), false)
+assert.equal(sanitizeWorkflowDraftName('  Enterprise renewal desk   '), 'Enterprise renewal desk')
+assert.equal(sanitizeWorkflowDraftName(''), 'Untitled workflow')
+assert.deepEqual(
+  applyWorkflowStepAction(['Watch Gmail', 'Draft reply', 'Ask Slack'], { type: 'move-up', index: 2 }),
+  ['Watch Gmail', 'Ask Slack', 'Draft reply'],
+)
+assert.deepEqual(
+  applyWorkflowStepAction(['Watch Gmail', 'Draft reply', 'Ask Slack'], { type: 'copy', index: 1 }),
+  ['Watch Gmail', 'Draft reply', 'Draft reply copy', 'Ask Slack'],
+)
+assert.deepEqual(
+  applyWorkflowStepAction(['Watch Gmail'], { type: 'move-down', index: 0 }),
+  ['Watch Gmail'],
+)
+assert.deepEqual(
+  createWorkflowReuseInput(templateDraftState.customWorkflows[0]),
+  {
+    name: 'Reply to customer inquiry copy',
+    description: 'Classify a new customer email, draft a helpful reply, and hold it for approval before sending.',
+    category: 'support',
+    impact: 'Saves 45 min / inquiry',
+    approvalRequirement: 'approval-required',
+    steps: ['Watch Gmail for customer questions', 'Draft response with Claude', 'Post review request in Slack'],
+    integrationIds: ['gmail', 'claude', 'slack'],
+    templateName: 'Reply to customer inquiry',
+    sourceIntegrationId: 'gmail',
+  },
+)
 
 const store = installLocalStorage()
 saveNexusDemoState(normalized)

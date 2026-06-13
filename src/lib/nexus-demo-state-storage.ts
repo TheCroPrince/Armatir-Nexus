@@ -6,6 +6,7 @@ import type {
   NexusNotification,
   NexusWorkflow,
   NotificationKind,
+  WorkflowApprovalRequirement,
   WorkflowStatus,
 } from '@/types/nexus'
 import type { NexusIconName } from '@/types/nexus-icons'
@@ -58,6 +59,7 @@ const integrationCategories = new Set(['productivity', 'communication', 'crm', '
 const integrationStatuses = new Set(['connected', 'syncing', 'attention'])
 const activityStatuses = new Set(['success', 'info', 'warning', 'ai'])
 const notificationKinds = new Set(['reply', 'workflow', 'ai', 'system', 'mention'])
+const workflowApprovalRequirements = new Set(['approval-required', 'optional-review', 'auto-run'])
 const integrationIcons = new Set([
   'Calendar',
   'Mail',
@@ -318,7 +320,7 @@ function readCustomWorkflow(value: unknown, integrationIds: Set<string>): NexusW
         .slice(0, 4)
         .map((integrationId) => ({ id: integrationId }))
     : []
-  const steps = readStringArray(value.steps, 5, 180)
+  const steps = readStringArray(value.steps, 8, 180)
   const sparkline = Array.isArray(value.sparkline)
     ? value.sparkline
         .filter((point): point is number => typeof point === 'number' && Number.isFinite(point) && point >= 0)
@@ -328,6 +330,9 @@ function readCustomWorkflow(value: unknown, integrationIds: Set<string>): NexusW
   const runsThisMonth = typeof value.runsThisMonth === 'number' && Number.isFinite(value.runsThisMonth) && value.runsThisMonth >= 0
     ? Math.round(value.runsThisMonth)
     : 0
+  const approvalRequirement = typeof value.approvalRequirement === 'string' && workflowApprovalRequirements.has(value.approvalRequirement)
+    ? value.approvalRequirement as WorkflowApprovalRequirement
+    : undefined
 
   if (!id.startsWith('local-workflow-') || !name || !description || !category || integrations.length === 0) return null
 
@@ -339,6 +344,7 @@ function readCustomWorkflow(value: unknown, integrationIds: Set<string>): NexusW
     status,
     lastRun: readText(value.lastRun, 'not run yet', 48),
     impact: readText(value.impact, 'Ready to save time this week', 96),
+    ...(approvalRequirement ? { approvalRequirement } : {}),
     steps: steps.length > 0 ? steps : ['Receive trigger from selected integration', 'Draft a local automation plan', 'Hold for review before taking action'],
     integrations,
     avgDuration: readText(value.avgDuration, '0.0s', 24),

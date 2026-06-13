@@ -1,6 +1,7 @@
 import type { NexusIconName } from './nexus-icons'
 
 export type WorkflowStatus = 'running' | 'ready' | 'synced' | 'review' | 'paused'
+export type WorkflowApprovalRequirement = 'approval-required' | 'optional-review' | 'auto-run'
 
 export interface WorkflowIntegrationRef {
   id: string
@@ -16,6 +17,7 @@ export interface NexusWorkflow {
   lastRun: string
   /** Headline metric (e.g. "Saves 2.4 hrs / week") */
   impact: string
+  approvalRequirement?: WorkflowApprovalRequirement
   steps: string[]
   integrations: WorkflowIntegrationRef[]
   avgDuration: string
