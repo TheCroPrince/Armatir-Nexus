@@ -24,6 +24,29 @@ export interface NexusWorkflow {
   sparkline: number[]
 }
 
+export type WorkflowTemplateCategory =
+  | 'customer-communication'
+  | 'leads-crm'
+  | 'scheduling'
+  | 'invoices-payments'
+  | 'documents-knowledge'
+  | 'team-notifications'
+
+export interface NexusWorkflowTemplate {
+  id: string
+  name: string
+  description: string
+  category: WorkflowTemplateCategory
+  workflowCategory: NexusWorkflow['category']
+  triggerIntegrationId: string
+  actionSummary: string[]
+  requiresApproval: boolean
+  estimatedTimeSaved: string
+  impact: string
+  steps: string[]
+  integrationIds: string[]
+}
+
 export type IntegrationCategory =
   | 'productivity'
   | 'communication'
@@ -43,6 +66,16 @@ export interface NexusIntegration {
   glow?: string
   /** Number of active workflows touching this integration. */
   activeWorkflows: number
+  /** Human-facing catalog group, e.g. "Email" or "Files and knowledge". */
+  catalogCategory?: string
+  /** Short value statement shown in the app directory. */
+  automationValue?: string
+  /** Local demo permission summary for connected or connectable apps. */
+  scopes?: string[]
+  /** Used to feature likely next connections in the directory modal. */
+  recommended?: boolean
+  /** ISO timestamp of the latest local connect/reconnect simulation. */
+  lastConnectedAt?: string
 }
 
 export type ActivityStatus = 'success' | 'info' | 'warning' | 'ai'

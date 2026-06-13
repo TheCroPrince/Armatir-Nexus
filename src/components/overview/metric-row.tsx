@@ -4,6 +4,7 @@ import { nexusMetrics } from '@/data/nexus'
 import { Sparkline } from '@/components/ui/sparkline'
 import { cn } from '@/lib/cn'
 import { useNexusSettings } from '@/lib/nexus-settings'
+import { useNexusDemoState } from '@/lib/nexus-demo-state-context'
 
 const trendIcon = {
   up:     <ArrowUpRight className="h-3 w-3" strokeWidth={2.2} />,
@@ -25,8 +26,52 @@ const trendTone = {
 
 export function MetricRow() {
   const { settings } = useNexusSettings()
+  const { workflows, integrations, inboxItems, activityEvents } = useNexusDemoState()
+  const runningCount = workflows.filter((workflow) => workflow.status === 'running').length
+  const reviewCount = workflows.filter((workflow) => workflow.status === 'review').length
+  const pendingCount = inboxItems.filter((item) => item.status === 'awaiting-approval' || item.status === 'drafted').length + reviewCount
+  const connectedCount = integrations.filter((integration) => integration.status === 'connected').length
+  const syncingCount = integrations.filter((integration) => integration.status === 'syncing').length
+  const handledCount = activityEvents.length + inboxItems.filter((item) => item.status === 'sent').length + workflows.reduce((total, workflow) => total + (workflow.status === 'running' ? 2 : 1), 0)
   const metrics = settings.sampleData
-    ? nexusMetrics
+    ? [
+        {
+          id: 'handled-items',
+          label: 'Handled today',
+          value: `${handledCount}`,
+          delta: `${activityEvents.length} activity`,
+          trend: 'up' as const,
+          caption: 'Local activity, sent items, and enabled workflow runs reflected in this session.',
+          sparkline: nexusMetrics[0]!.sparkline,
+        },
+        {
+          id: 'needs-review',
+          label: 'Needs review',
+          value: `${pendingCount}`,
+          delta: `${inboxItems.filter((item) => item.status === 'awaiting-approval').length} approvals`,
+          trend: pendingCount > 0 ? 'steady' as const : 'up' as const,
+          caption: 'Inbox approvals plus workflows currently waiting for an operator decision.',
+          sparkline: nexusMetrics[1]!.sparkline,
+        },
+        {
+          id: 'connected-integrations',
+          label: 'Connected integrations',
+          value: `${connectedCount}`,
+          delta: syncingCount > 0 ? `${syncingCount} syncing` : 'all steady',
+          trend: 'up' as const,
+          caption: 'Directory connections available to templates, notifications, and activity.',
+          sparkline: nexusMetrics[2]!.sparkline,
+        },
+        {
+          id: 'running-workflows',
+          label: 'Running workflows',
+          value: `${runningCount}`,
+          delta: `${reviewCount} review`,
+          trend: runningCount > 0 ? 'steady' as const : 'down' as const,
+          caption: 'Workflow toggles update this count immediately across the demo.',
+          sparkline: nexusMetrics[3]!.sparkline,
+        },
+      ]
     : nexusMetrics.map((metric) => ({
         ...metric,
         value: '--',

@@ -14,11 +14,11 @@ import {
   AtSign,
   AlertCircle,
 } from 'lucide-react'
-import { integrationsById } from '@/data/nexus'
-import { getNexusIcon } from '@/types/nexus-icons'
+import { getNexusIcon, isNexusBrandIcon } from '@/types/nexus-icons'
 import type { NexusNotification, NotificationKind } from '@/types/nexus'
 import { relativeTime } from '@/lib/time'
 import { cn } from '@/lib/cn'
+import { useNexusDemoState } from '@/lib/nexus-demo-state-context'
 
 interface NotificationsPanelProps {
   open: boolean
@@ -44,6 +44,7 @@ export function NotificationsPanel({ open, onClose, onOpenSettings, notification
   const navigate = useNavigate()
   const panelRef = useRef<HTMLDivElement>(null)
   const restoreFocusRef = useRef<HTMLElement | null>(null)
+  const { integrationsById } = useNexusDemoState()
   const items = notifications
   const [filter, setFilter] = useState<Filter>('all')
   const [tick, setTick] = useState(0)
@@ -206,6 +207,7 @@ export function NotificationsPanel({ open, onClose, onOpenSettings, notification
                   const meta = kindMeta[n.kind]
                   const integration = n.source ? integrationsById[n.source] : null
                   const SourceIcon = integration ? getNexusIcon(integration.icon) : null
+                  const hasBrandIcon = integration ? isNexusBrandIcon(integration.icon) : false
                   return (
                     <li key={n.id}>
                       <button
@@ -254,10 +256,19 @@ export function NotificationsPanel({ open, onClose, onOpenSettings, notification
                             {integration && SourceIcon && (
                               <span className="inline-flex items-center gap-1.5 text-[10.5px] text-[var(--color-ink-faint)]">
                                 <span
-                                  className="inline-flex h-3 w-3 items-center justify-center rounded-[3px]"
-                                  style={{ background: integration.accent }}
+                                  className={cn(
+                                    'inline-flex h-4 w-4 items-center justify-center rounded-[5px]',
+                                    hasBrandIcon ? 'bg-white' : '',
+                                  )}
+                                  style={{
+                                    background: hasBrandIcon ? 'oklch(100% 0 0 / 0.95)' : integration.accent,
+                                    boxShadow: hasBrandIcon ? 'inset 0 0 0 1px oklch(88% 0.015 285)' : undefined,
+                                  }}
                                 >
-                                  <SourceIcon className="h-1.5 w-1.5 text-white" strokeWidth={2.6} />
+                                  <SourceIcon
+                                    className={cn(hasBrandIcon ? 'h-3 w-3' : 'h-1.5 w-1.5 text-white')}
+                                    strokeWidth={2.6}
+                                  />
                                 </span>
                                 <span>{integration.name}</span>
                               </span>

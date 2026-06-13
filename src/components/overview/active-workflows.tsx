@@ -9,7 +9,7 @@ import { useNexusDemoState } from '@/lib/nexus-demo-state-context'
 
 export function ActiveWorkflows() {
   const { settings } = useNexusSettings()
-  const { workflows } = useNexusDemoState()
+  const { workflows, integrationsById } = useNexusDemoState()
   const runningCount = workflows.filter((workflow) => workflow.status === 'running').length
   const sorted = [...workflows].sort((a, b) => {
     const order = { review: 0, running: 1, ready: 2, synced: 3, paused: 4 }
@@ -53,7 +53,7 @@ export function ActiveWorkflows() {
                   'hover:bg-white/70',
                 )}
               >
-                <StatusPill status={w.status} pulse className="shrink-0" />
+                <StatusPill status={w.status} className="shrink-0" />
 
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
@@ -76,6 +76,7 @@ export function ActiveWorkflows() {
                   ids={w.integrations.map((i) => i.id).slice(0, 4)}
                   size="sm"
                   className="shrink-0"
+                  integrationIndex={integrationsById}
                 />
 
                 <ArrowUpRight className="ml-1 hidden h-3.5 w-3.5 text-[var(--color-ink-faint)] transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5 sm:block" />

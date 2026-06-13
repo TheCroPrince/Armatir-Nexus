@@ -30,7 +30,7 @@ export function StatusPill({ status, className, pulse = false }: StatusPillProps
   const c = colourMap[status]
   return (
     <span className={cn('status-pill', c.text, c.bg, className)}>
-      <span className={cn(c.dot, pulse && status === 'running' && 'animate-pulse')} />
+      <span className={cn(c.dot, pulse && status === 'running' && 'status-dot-live')} />
       {label[status]}
     </span>
   )

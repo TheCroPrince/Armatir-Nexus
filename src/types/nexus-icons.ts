@@ -1,49 +1,99 @@
 // Icon registry for Nexus integration chips and workflow steps.
+import type { ComponentType, SVGProps } from 'react'
 import {
-  Calendar,
-  Mail,
-  MessageSquare,
-  Users,
-  FileText,
-  CreditCard,
-  GitBranch,
-  GitMerge,
-  Brain,
-  Sparkles,
-  Hash,
-  Database,
+  BadgeDollarSign,
   Bot,
-  Workflow,
+  Box,
+  Building2,
+  CalendarDays,
+  ClipboardList,
+  Cloud,
+  Database,
+  FolderOpen,
+  Handshake,
   Inbox,
+  MailPlus,
+  MessageSquare,
+  MessagesSquare,
+  PanelTop,
+  ReceiptText,
+  ShoppingBag,
+  Table2,
+  Video,
   Webhook,
+  WalletCards,
+  Workflow,
 } from 'lucide-react'
-import type { LucideIcon } from 'lucide-react'
+import {
+  ClaudeIcon,
+  GitHubIcon,
+  GmailIcon,
+  GoogleCalendarIcon,
+  HubSpotIcon,
+  LinearIcon,
+  NotionIcon,
+  OpenAIIcon,
+  SlackIcon,
+  StripeIcon,
+} from '@/components/ui/nexus-brand-icons'
 
-// Aliases mapping integration brand names to semantically-fitting Lucide
-// glyphs. lucide-react v1 removed brand-name icons, so we stand in here.
+type NexusIconProps = SVGProps<SVGSVGElement> & { strokeWidth?: number; title?: string }
+export type NexusIconComponent = ComponentType<NexusIconProps>
+
 export const nexusIconRegistry = {
-  Calendar,
-  Mail,
+  Calendar: GoogleCalendarIcon,
+  Mail: GmailIcon,
   MessageSquare,
-  Users,
-  FileText,
-  CreditCard,
-  GitBranch,
-  /** stand-in for GitHub (brand icon removed in lucide v1) */
-  Github: GitMerge,
-  Brain,
-  Sparkles,
-  /** stand-in for Slack — # symbol for channels */
-  Slack: Hash,
+  Users: HubSpotIcon,
+  FileText: NotionIcon,
+  CreditCard: StripeIcon,
+  GitBranch: LinearIcon,
+  Github: GitHubIcon,
+  Brain: ClaudeIcon,
+  Sparkles: OpenAIIcon,
+  Slack: SlackIcon,
+  MailPlus,
+  CalendarDays,
+  Cloud,
+  Handshake,
+  Building2,
+  BadgeDollarSign,
+  ReceiptText,
+  Video,
+  FolderOpen,
+  Box,
+  Table2,
+  ShoppingBag,
+  ClipboardList,
+  MessagesSquare,
+  PanelTop,
+  WalletCards,
   Database,
   Bot,
   Workflow,
   Inbox,
   Webhook,
-} as const
+} as const satisfies Record<string, NexusIconComponent>
+
+const brandIconNames = new Set<keyof typeof nexusIconRegistry>([
+  'Calendar',
+  'Mail',
+  'Users',
+  'FileText',
+  'CreditCard',
+  'GitBranch',
+  'Github',
+  'Brain',
+  'Sparkles',
+  'Slack',
+])
 
 export type NexusIconName = keyof typeof nexusIconRegistry
 
-export function getNexusIcon(name: NexusIconName): LucideIcon {
+export function getNexusIcon(name: NexusIconName): NexusIconComponent {
   return nexusIconRegistry[name]
+}
+
+export function isNexusBrandIcon(name: NexusIconName) {
+  return brandIconNames.has(name)
 }

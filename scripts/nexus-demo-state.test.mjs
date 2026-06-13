@@ -5,6 +5,13 @@ import {
   normalizeNexusDemoState,
   saveNexusDemoState,
 } from '../src/lib/nexus-demo-state-storage.ts'
+import {
+  formatRunningWorkflowSummary,
+  formatWorkflowCount,
+  workflowActivityHref,
+} from '../src/lib/nexus-demo-labels.ts'
+
+const nexusData = await import('../src/data/nexus.ts')
 
 function installLocalStorage(initial = {}) {
   const store = new Map(Object.entries(initial))
@@ -53,6 +60,111 @@ assert.equal(normalized.drafts['in-001'], 'Custom approval note.')
 assert.deepEqual(normalized.dismissedRecommendationIds, ['rec-risk'])
 assert.equal(normalized.selectedWorkflowId, 'lead-routing')
 assert.equal(normalized.selectedInboxId, 'in-002')
+
+const actionTimestamp = '2026-06-12T14:30:00.000Z'
+const actionState = normalizeNexusDemoState({
+  integrations: {
+    outlook: { status: 'connected', activeWorkflows: 2, lastConnectedAt: actionTimestamp },
+    unknown: { status: 'connected', activeWorkflows: 99 },
+  },
+  activityEvents: [
+    {
+      id: 'activity-local-outlook',
+      message: 'Outlook connected locally',
+      source: 'outlook',
+      status: 'success',
+      timestamp: actionTimestamp,
+    },
+    { id: 'bad-event', message: '', source: 'unknown', status: 'banana', timestamp: actionTimestamp },
+  ],
+  notifications: [
+    {
+      id: 'notice-local-outlook',
+      kind: 'system',
+      title: 'Outlook connection ready',
+      body: 'Nexus can now use Outlook in local automations.',
+      source: 'outlook',
+      timestamp: actionTimestamp,
+      read: false,
+      href: '/integrations',
+      action: 'Manage',
+    },
+  ],
+  notificationStates: {
+    'n-1': { read: true },
+    'notice-local-outlook': { read: true },
+    unknown: { read: true },
+  },
+})
+
+assert.equal(actionState.integrations.outlook.status, 'connected')
+assert.equal(actionState.integrations.outlook.activeWorkflows, 2)
+assert.equal(actionState.integrations.outlook.lastConnectedAt, actionTimestamp)
+assert.equal(actionState.integrations.unknown, undefined)
+assert.equal(actionState.activityEvents.length, 1)
+assert.equal(actionState.activityEvents[0].source, 'outlook')
+assert.equal(actionState.notifications.length, 1)
+assert.equal(actionState.notifications[0].source, 'outlook')
+assert.equal(actionState.notificationStates['n-1'].read, true)
+assert.equal(actionState.notificationStates['notice-local-outlook'].read, true)
+assert.equal(actionState.notificationStates.unknown, undefined)
+
+assert.ok(Array.isArray(nexusData.nexusWorkflowTemplates), 'workflow templates are exported from shared Nexus data')
+assert.ok(nexusData.nexusWorkflowTemplates.length >= 6, 'workflow picker has a believable template catalog')
+assert.ok(
+  nexusData.nexusWorkflowTemplates.some((template) =>
+    template.id === 'reply-customer-inquiry' &&
+    template.category === 'customer-communication' &&
+    template.triggerIntegrationId === 'gmail' &&
+    template.requiresApproval === true &&
+    template.integrationIds.includes('gmail') &&
+    template.integrationIds.includes('claude') &&
+    template.integrationIds.includes('slack')),
+  'reply template includes trigger, approval, and connected app details',
+)
+
+const templateDraftState = normalizeNexusDemoState({
+  customWorkflows: [
+    {
+      id: 'local-workflow-reply-to-customer-inquiry',
+      name: 'Reply to customer inquiry',
+      description: 'Classify a new customer email, draft a helpful reply, and hold it for approval before sending.',
+      category: 'support',
+      status: 'ready',
+      lastRun: 'not run yet',
+      impact: 'Saves 45 min / inquiry',
+      steps: ['Watch Gmail for customer questions', 'Draft response with Claude', 'Post review request in Slack'],
+      integrations: [{ id: 'gmail' }, { id: 'claude' }, { id: 'slack' }],
+      avgDuration: '0.0s',
+      runsThisMonth: 0,
+      sparkline: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    },
+  ],
+  activityEvents: [
+    {
+      id: 'activity-local-reply-template',
+      message: 'Workflow draft created from template: Reply to customer inquiry',
+      source: 'gmail',
+      status: 'ai',
+      timestamp: actionTimestamp,
+      workflowId: 'local-workflow-reply-to-customer-inquiry',
+    },
+  ],
+  selectedWorkflowId: 'local-workflow-reply-to-customer-inquiry',
+})
+
+assert.equal(templateDraftState.customWorkflows[0].id, 'local-workflow-reply-to-customer-inquiry')
+assert.equal(templateDraftState.selectedWorkflowId, 'local-workflow-reply-to-customer-inquiry')
+assert.match(templateDraftState.activityEvents[0].message, /from template/)
+assert.equal(templateDraftState.activityEvents[0].workflowId, 'local-workflow-reply-to-customer-inquiry')
+
+assert.equal(formatWorkflowCount(1), '1 workflow')
+assert.equal(formatWorkflowCount(11), '11 workflows')
+assert.equal(formatRunningWorkflowSummary(1), '1 workflow running')
+assert.equal(formatRunningWorkflowSummary(3), '3 workflows running')
+assert.equal(workflowActivityHref({ workflowId: 'local-workflow-reply-to-customer-inquiry' }), '/workflows?w=local-workflow-reply-to-customer-inquiry')
+assert.equal(workflowActivityHref({ workflowId: 'sync project status' }), '/workflows?w=sync+project+status')
+assert.equal(workflowActivityHref({}), undefined)
 
 const store = installLocalStorage()
 saveNexusDemoState(normalized)

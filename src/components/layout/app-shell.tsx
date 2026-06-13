@@ -8,7 +8,6 @@ import { AskNexusPanel } from '@/components/shell/ask-nexus-panel'
 import { CommandPalette } from '@/components/shell/command-palette'
 import { NotificationsPanel } from '@/components/shell/notifications-panel'
 import { SettingsPanel } from '@/components/shell/settings-panel'
-import { nexusNotifications } from '@/data/nexus'
 import {
   NexusSettingsContext,
   defaultNexusSettings,
@@ -18,17 +17,12 @@ import {
 } from '@/lib/nexus-settings'
 import { cn } from '@/lib/cn'
 import { NexusDemoStateProvider } from '@/lib/nexus-demo-state'
+import { useNexusDemoState } from '@/lib/nexus-demo-state-context'
 import type { NexusNotification } from '@/types/nexus'
 
 const dailyDigestTimestamp = new Date(Date.now() - 2 * 60_000).toISOString()
 
 export function AppShell() {
-  const [paletteOpen, setPaletteOpen] = useState(false)
-  const [askNexusOpen, setAskNexusOpen] = useState(false)
-  const [notificationsOpen, setNotificationsOpen] = useState(false)
-  const [settingsOpen, setSettingsOpen] = useState(false)
-  const [notifications, setNotifications] = useState<NexusNotification[]>(nexusNotifications)
-  const [dailyDigestRead, setDailyDigestRead] = useState(false)
   const [settings, setSettings] = useState(loadStoredNexusSettings)
 
   const updateSetting = useCallback(
@@ -46,7 +40,23 @@ export function AppShell() {
     saveNexusSettings(settings)
   }, [settings])
 
-  // Command palette shortcuts and Escape close handling.
+  return (
+    <NexusSettingsContext.Provider value={{ settings, updateSetting, resetSettings }}>
+      <NexusDemoStateProvider>
+        <AppShellContent settings={settings} />
+      </NexusDemoStateProvider>
+    </NexusSettingsContext.Provider>
+  )
+}
+
+function AppShellContent({ settings }: { settings: typeof defaultNexusSettings }) {
+  const [paletteOpen, setPaletteOpen] = useState(false)
+  const [askNexusOpen, setAskNexusOpen] = useState(false)
+  const [notificationsOpen, setNotificationsOpen] = useState(false)
+  const [settingsOpen, setSettingsOpen] = useState(false)
+  const [dailyDigestRead, setDailyDigestRead] = useState(false)
+  const { notifications, updateNotifications } = useNexusDemoState()
+
   useEffect(() => {
     function handler(e: KeyboardEvent) {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
@@ -97,75 +107,68 @@ export function AppShell() {
     const nextDigest = nextVisible.find((notification) => notification.id === 'daily-digest-summary')
     if (nextDigest) setDailyDigestRead(nextDigest.read)
 
-    setNotifications((current) => current.map((notification) =>
-      nextVisible.find((next) => next.id === notification.id) ?? notification,
-    ))
+    updateNotifications(nextVisible.filter((notification) => notification.id !== 'daily-digest-summary'))
   }
 
   return (
-    <NexusSettingsContext.Provider value={{ settings, updateSetting, resetSettings }}>
-      <NexusDemoStateProvider>
-        <MotionConfig reducedMotion={settings.reduceMotion ? 'always' : 'never'}>
-          <div
-          data-nexus-shell
-          data-ai-triage={settings.aiTriage ? 'on' : 'off'}
-          data-auto-escalation={settings.autoEscalation ? 'on' : 'off'}
-          data-density={settings.compactMode ? 'compact' : 'comfortable'}
-          data-daily-digest={settings.dailyDigest ? 'on' : 'off'}
-          data-email-alerts={settings.emailAlerts ? 'on' : 'off'}
-          data-motion={settings.reduceMotion ? 'reduced' : 'full'}
-          data-sample-data={settings.sampleData ? 'on' : 'off'}
-          data-slack-alerts={settings.slackAlerts ? 'on' : 'off'}
-          className={cn(
-            'nexus-canvas nexus-grain relative isolate min-h-dvh',
-            settings.compactMode && 'nexus-compact',
-            settings.reduceMotion && 'nexus-reduce-motion',
-          )}
-        >
-      {/* Floating decorative blobs — anchor the painterly feel without overwhelming the UI */}
+    <MotionConfig reducedMotion={settings.reduceMotion ? 'always' : 'never'}>
       <div
-        className="pointer-events-none fixed inset-x-0 top-0 -z-10 h-[80vh] opacity-90"
-        aria-hidden="true"
-        style={{
-          background:
-            'radial-gradient(ellipse 50% 40% at 80% 10%, oklch(82% 0.12 295 / 0.6) 0%, transparent 60%),' +
-            'radial-gradient(ellipse 50% 30% at 15% 0%, oklch(86% 0.10 230 / 0.5) 0%, transparent 60%),' +
-            'radial-gradient(ellipse 35% 25% at 50% -5%, oklch(88% 0.10 320 / 0.45) 0%, transparent 70%)',
-        }}
-      />
+        data-nexus-shell
+        data-ai-triage={settings.aiTriage ? 'on' : 'off'}
+        data-auto-escalation={settings.autoEscalation ? 'on' : 'off'}
+        data-density={settings.compactMode ? 'compact' : 'comfortable'}
+        data-daily-digest={settings.dailyDigest ? 'on' : 'off'}
+        data-email-alerts={settings.emailAlerts ? 'on' : 'off'}
+        data-motion={settings.reduceMotion ? 'reduced' : 'full'}
+        data-sample-data={settings.sampleData ? 'on' : 'off'}
+        data-slack-alerts={settings.slackAlerts ? 'on' : 'off'}
+        className={cn(
+          'nexus-canvas nexus-grain relative isolate min-h-dvh',
+          settings.compactMode && 'nexus-compact',
+          settings.reduceMotion && 'nexus-reduce-motion',
+        )}
+      >
+        <div
+          className="pointer-events-none fixed inset-x-0 top-0 -z-10 h-[80vh] opacity-90"
+          aria-hidden="true"
+          style={{
+            background:
+              'radial-gradient(ellipse 50% 40% at 80% 10%, oklch(82% 0.12 295 / 0.6) 0%, transparent 60%),' +
+              'radial-gradient(ellipse 50% 30% at 15% 0%, oklch(86% 0.10 230 / 0.5) 0%, transparent 60%),' +
+              'radial-gradient(ellipse 35% 25% at 50% -5%, oklch(88% 0.10 320 / 0.45) 0%, transparent 70%)',
+          }}
+        />
 
-      <Topbar
-        onOpenPalette={() => { setPaletteOpen(true); setAskNexusOpen(false); setNotificationsOpen(false); setSettingsOpen(false) }}
-        onOpenSettings={() => { setSettingsOpen(true); setPaletteOpen(false); setAskNexusOpen(false); setNotificationsOpen(false) }}
-        onAskNexus={() => { setAskNexusOpen(true); setPaletteOpen(false); setNotificationsOpen(false); setSettingsOpen(false) }}
-        onToggleNotifications={() => { setNotificationsOpen((o) => !o); setPaletteOpen(false); setAskNexusOpen(false); setSettingsOpen(false) }}
-        askNexusOpen={askNexusOpen}
-        notificationsOpen={notificationsOpen}
-        unreadCount={unreadCount}
-      />
+        <Topbar
+          onOpenPalette={() => { setPaletteOpen(true); setAskNexusOpen(false); setNotificationsOpen(false); setSettingsOpen(false) }}
+          onOpenSettings={() => { setSettingsOpen(true); setPaletteOpen(false); setAskNexusOpen(false); setNotificationsOpen(false) }}
+          onAskNexus={() => { setAskNexusOpen(true); setPaletteOpen(false); setNotificationsOpen(false); setSettingsOpen(false) }}
+          onToggleNotifications={() => { setNotificationsOpen((o) => !o); setPaletteOpen(false); setAskNexusOpen(false); setSettingsOpen(false) }}
+          askNexusOpen={askNexusOpen}
+          notificationsOpen={notificationsOpen}
+          unreadCount={unreadCount}
+        />
 
-      <div className="relative z-10 flex">
-        <Sidebar onOpenSettings={() => { setSettingsOpen(true); setPaletteOpen(false); setAskNexusOpen(false); setNotificationsOpen(false) }} />
+        <div className="relative z-10 flex">
+          <Sidebar onOpenSettings={() => { setSettingsOpen(true); setPaletteOpen(false); setAskNexusOpen(false); setNotificationsOpen(false) }} />
 
-        <div className="flex-1 min-w-0 pb-20 md:pb-0">
-          <Outlet />
-        </div>
-      </div>
-
-      <AskNexusPanel open={askNexusOpen} onClose={() => setAskNexusOpen(false)} />
-      <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} />
-      <NotificationsPanel
-        open={notificationsOpen}
-        onClose={() => setNotificationsOpen(false)}
-        onOpenSettings={() => { setSettingsOpen(true); setPaletteOpen(false); setAskNexusOpen(false); setNotificationsOpen(false) }}
-        notifications={visibleNotifications}
-        onUpdate={updateVisibleNotifications}
-      />
-      <SettingsPanel open={settingsOpen} onClose={() => setSettingsOpen(false)} />
-      <MobileNav onOpenSettings={() => { setSettingsOpen(true); setPaletteOpen(false); setAskNexusOpen(false); setNotificationsOpen(false) }} />
+          <div className="flex-1 min-w-0 pb-20 md:pb-0">
+            <Outlet />
           </div>
-        </MotionConfig>
-      </NexusDemoStateProvider>
-    </NexusSettingsContext.Provider>
+        </div>
+
+        <AskNexusPanel open={askNexusOpen} onClose={() => setAskNexusOpen(false)} />
+        <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} />
+        <NotificationsPanel
+          open={notificationsOpen}
+          onClose={() => setNotificationsOpen(false)}
+          onOpenSettings={() => { setSettingsOpen(true); setPaletteOpen(false); setAskNexusOpen(false); setNotificationsOpen(false) }}
+          notifications={visibleNotifications}
+          onUpdate={updateVisibleNotifications}
+        />
+        <SettingsPanel open={settingsOpen} onClose={() => setSettingsOpen(false)} />
+        <MobileNav onOpenSettings={() => { setSettingsOpen(true); setPaletteOpen(false); setAskNexusOpen(false); setNotificationsOpen(false) }} />
+      </div>
+    </MotionConfig>
   )
 }

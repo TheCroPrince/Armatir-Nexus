@@ -1,14 +1,34 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Plus, Search, Clock, Activity as ActivityIcon, ChevronRight, Play, Pause, MoreHorizontal } from 'lucide-react'
-import { integrationsById } from '@/data/nexus'
+import { Plus, Search, Clock, Activity as ActivityIcon, ChevronRight, Play, Pause, MoreHorizontal, X, Sparkles, CheckCircle2, ShieldCheck, Timer } from 'lucide-react'
 import { StatusPill } from '@/components/ui/status-pill'
 import { IntegrationCluster, IntegrationChip } from '@/components/ui/integration-chip'
 import { Sparkline } from '@/components/ui/sparkline'
-import type { NexusWorkflow } from '@/types/nexus'
+import { nexusWorkflowTemplates } from '@/data/nexus'
+import type { NexusIntegration, NexusWorkflow, NexusWorkflowTemplate, WorkflowTemplateCategory } from '@/types/nexus'
 import { cn } from '@/lib/cn'
 import { useNexusDemoState } from '@/lib/nexus-demo-state-context'
+
+const workflowTemplateCategoryOrder: Array<WorkflowTemplateCategory | 'all'> = [
+  'all',
+  'customer-communication',
+  'leads-crm',
+  'scheduling',
+  'invoices-payments',
+  'documents-knowledge',
+  'team-notifications',
+]
+
+const workflowTemplateCategoryLabels: Record<WorkflowTemplateCategory | 'all', string> = {
+  all: 'All',
+  'customer-communication': 'Customer communication',
+  'leads-crm': 'Leads and CRM',
+  scheduling: 'Scheduling',
+  'invoices-payments': 'Invoices and payments',
+  'documents-knowledge': 'Documents and knowledge',
+  'team-notifications': 'Team notifications',
+}
 
 function resolveWorkflowId(id: string | null, workflows: NexusWorkflow[]) {
   return workflows.some((workflow) => workflow.id === id)
@@ -18,10 +38,18 @@ function resolveWorkflowId(id: string | null, workflows: NexusWorkflow[]) {
 
 export function WorkflowsPage() {
   const [params, setParams] = useSearchParams()
-  const { workflows, selectedWorkflowId, selectWorkflow, toggleWorkflow } = useNexusDemoState()
+  const {
+    workflows,
+    integrationsById,
+    selectedWorkflowId,
+    selectWorkflow,
+    toggleWorkflow,
+    createWorkflowFromTemplate,
+  } = useNexusDemoState()
   const [query, setQuery] = useState('')
   const [filter, setFilter] = useState<'all' | NexusWorkflow['status']>('all')
   const [notice, setNotice] = useState<string | null>(null)
+  const [isCreateOpen, setIsCreateOpen] = useState(false)
   const selectedId = resolveWorkflowId(params.get('w') ?? selectedWorkflowId, workflows)
 
   // Keep URL and selection in sync so deep links can land directly on a workflow.
@@ -64,6 +92,22 @@ export function WorkflowsPage() {
       : `${selected.name} queued and running now`)
   }
 
+  function handleCreateWorkflow(templateId: string) {
+    const workflow = createWorkflowFromTemplate(templateId)
+    if (!workflow) {
+      announce('Template unavailable')
+      return
+    }
+
+    const next = new URLSearchParams(params)
+    next.set('w', workflow.id)
+    setParams(next)
+    setFilter('all')
+    setQuery('')
+    setIsCreateOpen(false)
+    announce(`${workflow.name} draft created`)
+  }
+
   return (
     <div className="grid min-h-[calc(100dvh-56px)] grid-cols-1 gap-0 lg:h-[calc(100dvh-56px)] lg:grid-cols-[minmax(360px,440px)_1fr]">
       {/* ── List column ────────────────────────────────────────── */}
@@ -78,7 +122,7 @@ export function WorkflowsPage() {
             </p>
           </div>
           <button
-            onClick={() => announce('New workflow draft created')}
+            onClick={() => setIsCreateOpen(true)}
             className="flex items-center gap-1 rounded-full bg-[var(--color-ink)] px-2.5 py-1.5 text-[11.5px] font-medium text-white shadow-[var(--shadow-card)]"
             aria-label="Create new workflow"
           >
@@ -144,13 +188,13 @@ export function WorkflowsPage() {
                       <span className="line-clamp-1 text-[13px] font-medium text-[var(--color-ink)]">
                         {w.name}
                       </span>
-                      <StatusPill status={w.status} pulse className="shrink-0" />
+                      <StatusPill status={w.status} className="shrink-0" />
                     </div>
                     <p className="line-clamp-1 text-[11.5px] text-[var(--color-ink-faint)]">
                       {w.impact}
                     </p>
                     <div className="mt-1 flex items-center justify-between">
-                      <IntegrationCluster ids={w.integrations.map((i) => i.id)} size="sm" />
+                      <IntegrationCluster ids={w.integrations.map((i) => i.id)} size="sm" integrationIndex={integrationsById} />
                       <span className="font-mono text-[10.5px] tabular-nums text-[var(--color-ink-faint)]">
                         {w.lastRun}
                       </span>
@@ -184,14 +228,21 @@ export function WorkflowsPage() {
               onToggle={toggleSelectedWorkflow}
               onMenu={() => announce('Workflow actions opened')}
             />
-            <DetailFlow workflow={selected} />
+            <DetailFlow workflow={selected} integrationIndex={integrationsById} />
             <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
-              <DetailMeta workflow={selected} />
+              <DetailMeta workflow={selected} integrationIndex={integrationsById} />
               <DetailRunHistory workflow={selected} />
             </div>
           </motion.div>
         </AnimatePresence>
       </div>
+      <WorkflowTemplatePickerModal
+        open={isCreateOpen}
+        templates={nexusWorkflowTemplates}
+        integrationIndex={integrationsById}
+        onClose={() => setIsCreateOpen(false)}
+        onCreate={handleCreateWorkflow}
+      />
       <AnimatePresence>
         {notice && (
           <motion.div
@@ -205,6 +256,186 @@ export function WorkflowsPage() {
           </motion.div>
         )}
       </AnimatePresence>
+    </div>
+  )
+}
+
+function WorkflowTemplatePickerModal({
+  open,
+  templates,
+  integrationIndex,
+  onClose,
+  onCreate,
+}: {
+  open: boolean
+  templates: NexusWorkflowTemplate[]
+  integrationIndex: Record<string, NexusIntegration>
+  onClose: () => void
+  onCreate: (templateId: string) => void
+}) {
+  const [category, setCategory] = useState<WorkflowTemplateCategory | 'all'>('all')
+  const visibleTemplates = useMemo(
+    () => templates.filter((template) => category === 'all' || template.category === category),
+    [category, templates],
+  )
+
+  return (
+    <AnimatePresence>
+      {open && (
+        <>
+          <motion.button
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={onClose}
+            className="fixed inset-0 z-40 cursor-default bg-[oklch(18%_0.03_280_/_0.22)] backdrop-blur-[3px]"
+            aria-label="Close workflow template picker"
+          />
+          <div className="fixed inset-0 z-50 flex items-center justify-center px-3 py-4 sm:px-5">
+            <motion.section
+              initial={{ opacity: 0, y: 18, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 10, scale: 0.985 }}
+              transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
+              className="flex max-h-[calc(100dvh-2rem)] w-full max-w-[1060px] flex-col overflow-hidden rounded-[26px] border border-white/70 bg-[oklch(98.5%_0.012_290_/_0.96)] shadow-[var(--shadow-pop)] backdrop-blur-2xl"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="workflow-template-title"
+            >
+              <div className="flex items-start justify-between gap-4 border-b border-[var(--color-hairline-soft)] px-5 py-4 sm:px-6">
+                <div>
+                  <div className="mono-label">Template library</div>
+                  <h2 id="workflow-template-title" className="mt-1 text-[20px] font-semibold tracking-tight text-[var(--color-ink)]">
+                    New workflow
+                  </h2>
+                </div>
+                <button onClick={onClose} className="pill !h-8 !w-8 !justify-center !p-0" aria-label="Close workflow template picker">
+                  <X className="h-3.5 w-3.5" strokeWidth={1.9} />
+                </button>
+              </div>
+
+              <div className="border-b border-[var(--color-hairline-soft)] px-5 py-3 sm:px-6">
+                <div className="flex gap-1.5 overflow-x-auto pb-1">
+                  {workflowTemplateCategoryOrder.map((item) => (
+                    <button
+                      key={item}
+                      onClick={() => setCategory(item)}
+                      className={cn(
+                        'shrink-0 rounded-full px-3 py-1.5 text-[11.5px] font-medium transition-colors',
+                        category === item
+                          ? 'bg-[var(--color-ink)] text-white shadow-[var(--shadow-card)]'
+                          : 'bg-white/60 text-[var(--color-ink-faint)] hover:bg-white/85 hover:text-[var(--color-ink)]',
+                      )}
+                      aria-pressed={category === item}
+                    >
+                      {workflowTemplateCategoryLabels[item]}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex-1 overflow-y-auto px-4 py-4 sm:px-6 sm:py-5">
+                <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+                  {visibleTemplates.map((template) => (
+                    <WorkflowTemplateCard
+                      key={template.id}
+                      template={template}
+                      integrationIndex={integrationIndex}
+                      onCreate={onCreate}
+                    />
+                  ))}
+                </div>
+              </div>
+            </motion.section>
+          </div>
+        </>
+      )}
+    </AnimatePresence>
+  )
+}
+
+function WorkflowTemplateCard({
+  template,
+  integrationIndex,
+  onCreate,
+}: {
+  template: NexusWorkflowTemplate
+  integrationIndex: Record<string, NexusIntegration>
+  onCreate: (templateId: string) => void
+}) {
+  const trigger = integrationIndex[template.triggerIntegrationId]
+  const approvalLabel = template.requiresApproval ? 'Approval required' : 'Runs automatically'
+
+  return (
+    <button
+      onClick={() => onCreate(template.id)}
+      className="group flex min-h-[270px] w-full flex-col rounded-2xl border border-[var(--color-hairline-soft)] bg-white/58 px-4 py-4 text-left shadow-[var(--shadow-card)] transition-all hover:-translate-y-0.5 hover:border-[oklch(78%_0.10_285)] hover:bg-white hover:shadow-[var(--shadow-card-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-violet)]"
+      aria-label={`Create workflow from ${template.name} template`}
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex min-w-0 items-start gap-3">
+          <IntegrationChip id={template.triggerIntegrationId} size="lg" integrationIndex={integrationIndex} />
+          <div className="min-w-0">
+            <div className="mono-label line-clamp-1">{workflowTemplateCategoryLabels[template.category]}</div>
+            <h3 className="mt-1 line-clamp-2 text-[15px] font-semibold leading-snug text-[var(--color-ink)]">
+              {template.name}
+            </h3>
+          </div>
+        </div>
+        <ChevronRight className="mt-1 h-4 w-4 shrink-0 text-[var(--color-ink-ghost)] transition-transform group-hover:translate-x-0.5 group-hover:text-[var(--color-ink-soft)]" strokeWidth={1.8} />
+      </div>
+
+      <p className="mt-3 line-clamp-2 text-[12.5px] leading-relaxed text-[var(--color-ink-soft)]">
+        {template.description}
+      </p>
+
+      <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-3">
+        <TemplateFact icon={<Sparkles className="h-3.5 w-3.5" strokeWidth={1.8} />} label="Trigger" value={trigger?.name ?? template.triggerIntegrationId} />
+        <TemplateFact icon={<ShieldCheck className="h-3.5 w-3.5" strokeWidth={1.8} />} label="Control" value={approvalLabel} />
+        <TemplateFact icon={<Timer className="h-3.5 w-3.5" strokeWidth={1.8} />} label="Saved" value={template.estimatedTimeSaved} />
+      </div>
+
+      <div className="mt-4 rounded-xl border border-[var(--color-hairline-soft)] bg-white/55 px-3 py-3">
+        <div className="mb-2 flex items-center gap-2 text-[12px] font-medium text-[var(--color-ink)]">
+          <CheckCircle2 className="h-3.5 w-3.5 text-[var(--color-violet)]" strokeWidth={1.8} />
+          Actions performed
+        </div>
+        <ul className="space-y-1">
+          {template.actionSummary.map((action) => (
+            <li key={action} className="flex gap-2 text-[11.5px] leading-relaxed text-[var(--color-ink-soft)]">
+              <span className="mt-[7px] h-1 w-1 shrink-0 rounded-full bg-[var(--color-violet-soft)]" />
+              <span>{action}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      <div className="mt-auto flex items-center justify-between gap-3 pt-4">
+        <IntegrationCluster ids={template.integrationIds} size="sm" integrationIndex={integrationIndex} />
+        <span className="flex shrink-0 items-center gap-1.5 rounded-full bg-[var(--color-ink)] px-3 py-1.5 text-[12px] font-medium text-white shadow-[var(--shadow-card)] transition-transform group-hover:scale-[1.02]">
+          <Plus className="h-3 w-3" strokeWidth={2.2} /> Use template
+        </span>
+      </div>
+    </button>
+  )
+}
+
+function TemplateFact({
+  icon,
+  label,
+  value,
+}: {
+  icon: ReactNode
+  label: string
+  value: string
+}) {
+  return (
+    <div className="min-w-0 rounded-xl border border-[var(--color-hairline-soft)] bg-white/55 px-2.5 py-2">
+      <div className="flex items-center gap-1.5 text-[10.5px] font-medium uppercase tracking-[0.08em] text-[var(--color-ink-faint)]">
+        <span className="text-[var(--color-violet)]">{icon}</span>
+        {label}
+      </div>
+      <div className="mt-1 line-clamp-2 text-[11.5px] font-medium leading-snug text-[var(--color-ink)]">{value}</div>
     </div>
   )
 }
@@ -297,7 +528,13 @@ function DetailHeader({
   )
 }
 
-function DetailFlow({ workflow }: { workflow: NexusWorkflow }) {
+function DetailFlow({
+  workflow,
+  integrationIndex,
+}: {
+  workflow: NexusWorkflow
+  integrationIndex: Record<string, NexusIntegration>
+}) {
   return (
     <div className="glass rounded-2xl p-5">
       <div className="mb-4 flex items-center justify-between">
@@ -309,7 +546,7 @@ function DetailFlow({ workflow }: { workflow: NexusWorkflow }) {
         </div>
         <div className="flex items-center gap-1.5">
           {workflow.integrations.map((i) => (
-            <IntegrationChip key={i.id} id={i.id} size="md" />
+            <IntegrationChip key={i.id} id={i.id} size="md" integrationIndex={integrationIndex} />
           ))}
         </div>
       </div>
@@ -329,8 +566,8 @@ function DetailFlow({ workflow }: { workflow: NexusWorkflow }) {
                 <p className="text-[13px] leading-snug text-[var(--color-ink)]">{step}</p>
                 {integration && (
                   <div className="mt-1 flex items-center gap-1.5 text-[10.5px] text-[var(--color-ink-faint)]">
-                    <IntegrationChip id={integration.id} size="sm" />
-                    <span>via {integrationsById[integration.id]?.name ?? integration.id}</span>
+                    <IntegrationChip id={integration.id} size="sm" integrationIndex={integrationIndex} />
+                    <span>via {integrationIndex[integration.id]?.name ?? integration.id}</span>
                   </div>
                 )}
               </div>
@@ -345,17 +582,23 @@ function DetailFlow({ workflow }: { workflow: NexusWorkflow }) {
   )
 }
 
-function DetailMeta({ workflow }: { workflow: NexusWorkflow }) {
+function DetailMeta({
+  workflow,
+  integrationIndex,
+}: {
+  workflow: NexusWorkflow
+  integrationIndex: Record<string, NexusIntegration>
+}) {
   return (
     <div className="glass rounded-2xl p-5">
       <div className="mb-3 text-[13px] font-medium text-[var(--color-ink)]">Connected integrations</div>
       <ul className="flex flex-col gap-2.5">
         {workflow.integrations.map((i) => (
           <li key={i.id} className="flex items-center gap-3">
-            <IntegrationChip id={i.id} size="lg" />
+            <IntegrationChip id={i.id} size="lg" integrationIndex={integrationIndex} />
             <div className="flex-1 min-w-0">
               <div className="text-[13px] font-medium text-[var(--color-ink)]">
-                {integrationsById[i.id]?.name ?? i.id}
+                {integrationIndex[i.id]?.name ?? i.id}
               </div>
               <div className="text-[10.5px] text-[var(--color-ink-faint)]">Active connection · OAuth · scoped</div>
             </div>

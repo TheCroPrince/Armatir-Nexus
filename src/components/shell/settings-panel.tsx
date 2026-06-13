@@ -12,6 +12,8 @@ import {
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { cn } from '@/lib/cn'
+import { formatWorkflowCount } from '@/lib/nexus-demo-labels'
+import { useNexusDemoState } from '@/lib/nexus-demo-state-context'
 import { useNexusSettings } from '@/lib/nexus-settings'
 import type { NexusSettings } from '@/lib/nexus-settings'
 
@@ -86,8 +88,10 @@ function Section({
 export function SettingsPanel({ open, onClose }: SettingsPanelProps) {
   const panelRef = useRef<HTMLDivElement>(null)
   const restoreFocusRef = useRef<HTMLElement | null>(null)
+  const { workflows } = useNexusDemoState()
   const { settings, updateSetting, resetSettings } = useNexusSettings()
   const [notice, setNotice] = useState('Changes save on this browser.')
+  const workflowCount = workflows.length
 
   useEffect(() => {
     if (!open) return
@@ -204,7 +208,7 @@ export function SettingsPanel({ open, onClose }: SettingsPanelProps) {
                   </span>
                   <div className="min-w-0">
                     <div className="text-[13px] font-medium text-[var(--color-ink)]">Armatir Studio</div>
-                    <div className="text-[11px] text-[var(--color-ink-faint)]">Production environment · 8 workflows</div>
+                    <div className="text-[11px] text-[var(--color-ink-faint)]">Production environment · {formatWorkflowCount(workflowCount)}</div>
                   </div>
                 </div>
               </div>

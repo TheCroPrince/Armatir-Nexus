@@ -3,6 +3,7 @@ import { Radio, Search, Filter } from 'lucide-react'
 import { ActivityFeed } from '@/components/overview/activity-feed'
 import type { ActivityStatus } from '@/types/nexus'
 import { cn } from '@/lib/cn'
+import { useNexusDemoState } from '@/lib/nexus-demo-state-context'
 
 type Filter = 'all' | 'success' | 'info' | 'warning' | 'ai'
 type Range = 'today' | '15m'
@@ -16,11 +17,13 @@ const filterLabels: Record<Filter, string> = {
 }
 
 export function ActivityPage() {
+  const { activityEvents } = useNexusDemoState()
   const [filter, setFilter] = useState<Filter>('all')
   const [query, setQuery] = useState('')
   const [range, setRange] = useState<Range>('today')
   const statusFilter: ActivityStatus | 'all' = filter
   const sinceMs = range === '15m' ? 15 * 60_000 : 24 * 60 * 60_000
+  const eventRate = Math.max(1, Math.min(24, Math.round(activityEvents.length / 2)))
 
   return (
     <div className="flex flex-col gap-5 px-5 py-6 md:px-7 md:py-7 lg:px-10 lg:py-8">
@@ -75,7 +78,7 @@ export function ActivityPage() {
           </button>
         ))}
         <span className="w-full text-right sm:ml-auto sm:w-auto flex items-center justify-end gap-1.5 text-[11.5px] text-[var(--color-ink-faint)]">
-          <Radio className="h-3 w-3 text-[var(--color-mint)]" /> 12 events / min
+          <Radio className="h-3 w-3 text-[var(--color-mint)]" /> {eventRate} events / min
         </span>
       </div>
 
