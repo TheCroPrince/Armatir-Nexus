@@ -254,10 +254,10 @@ export function NotificationsPanel({ open, onClose, onOpenSettings, notification
                             {integration && SourceIcon && (
                               <span className="inline-flex items-center gap-1.5 text-[10.5px] text-[var(--color-ink-faint)]">
                                 <span
-                                  className="inline-flex h-3 w-3 items-center justify-center rounded-[3px]"
-                                  style={{ background: integration.accent }}
+                                  className="inline-flex h-3.5 w-3.5 items-center justify-center rounded-[3px] bg-white"
+                                  style={{ boxShadow: `0 0 0 1px ${integration.accent.replace(')', ' / 0.22)')}` }}
                                 >
-                                  <SourceIcon className="h-1.5 w-1.5 text-white" strokeWidth={2.6} />
+                                  <SourceIcon className="h-2 w-2" />
                                 </span>
                                 <span>{integration.name}</span>
                               </span>

@@ -24,8 +24,7 @@ export function IntegrationsPage() {
   const [selectedId, setSelectedId] = useState<string>(nexusIntegrations[0]!.id)
   const selected = integrationsById[hovered ?? selectedId] ?? nexusIntegrations[0]!
   const selectedIcon = createElement(getNexusIcon(selected.icon), {
-    className: 'h-5 w-5 text-white',
-    strokeWidth: 2.2,
+    className: 'h-6 w-6',
   })
   const relatedWorkflows = nexusWorkflows.filter((workflow) =>
     workflow.integrations.some((integration) => integration.id === selected.id),
@@ -107,13 +106,12 @@ export function IntegrationsPage() {
                         style={{ background: i.accent }}
                       />
                       <span
-                        className="relative flex h-9 w-9 items-center justify-center rounded-xl"
+                        className="relative flex h-9 w-9 items-center justify-center rounded-xl bg-white"
                         style={{
-                          background: `linear-gradient(135deg, ${i.accent}, oklch(98% 0.01 280))`,
-                          boxShadow: `inset 0 0 0 1px oklch(100% 0 0 / 0.55), 0 4px 12px ${i.accent.replace(')', ' / 0.3)')}`,
+                          boxShadow: `inset 0 0 0 1px oklch(100% 0 0 / 0.9), 0 0 0 1px ${i.accent.replace(')', ' / 0.16)')}, 0 4px 12px ${i.accent.replace(')', ' / 0.22)')}`,
                         }}
                       >
-                        <Icon className="h-4 w-4 text-white drop-shadow-[0_1px_1px_oklch(0%_0_0_/_0.25)]" strokeWidth={2.2} />
+                        <Icon className="h-5 w-5" />
                       </span>
 
                       {/* Status dot */}
@@ -152,10 +150,9 @@ export function IntegrationsPage() {
         <div className="glass rounded-2xl p-5">
           <div className="flex items-start gap-3">
             <span
-              className="relative inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl"
+              className="relative inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white"
               style={{
-                background: `linear-gradient(135deg, ${selected.accent}, oklch(98% 0.01 280))`,
-                boxShadow: `inset 0 0 0 1px oklch(100% 0 0 / 0.55), 0 8px 20px ${selected.accent.replace(')', ' / 0.25)')}`,
+                boxShadow: `inset 0 0 0 1px oklch(100% 0 0 / 0.9), 0 0 0 1px ${selected.accent.replace(')', ' / 0.16)')}, 0 8px 20px ${selected.accent.replace(')', ' / 0.22)')}`,
               }}
             >
               {selectedIcon}
@@ -233,15 +230,14 @@ export function IntegrationsPage() {
           >
             <div className="flex items-start gap-2.5">
               <span
-                className="relative inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md"
+                className="relative inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-white"
                 style={{
-                  background: `linear-gradient(135deg, ${i.accent}, oklch(98% 0.01 280))`,
-                  boxShadow: `inset 0 0 0 1px oklch(100% 0 0 / 0.55), 0 2px 6px ${i.accent.replace(')', ' / 0.25)')}`,
+                  boxShadow: `inset 0 0 0 1px oklch(100% 0 0 / 0.9), 0 0 0 1px ${i.accent.replace(')', ' / 0.16)')}, 0 2px 6px ${i.accent.replace(')', ' / 0.22)')}`,
                 }}
               >
                 {(() => {
                   const Icon = getNexusIcon(i.icon)
-                  return <Icon className="h-3.5 w-3.5 text-white" strokeWidth={2.2} />
+                  return <Icon className="h-4 w-4" />
                 })()}
               </span>
               <div className="flex-1 min-w-0">

@@ -14,16 +14,16 @@ import type {
 // ─── Integrations ────────────────────────────────────────────────────────────
 
 export const nexusIntegrations: NexusIntegration[] = [
-  { id: 'gmail',     name: 'Gmail',           category: 'communication', status: 'connected', accent: 'oklch(70% 0.16 25)',  icon: 'Mail',         activeWorkflows: 4 },
-  { id: 'gcal',      name: 'Google Calendar', category: 'productivity',  status: 'connected', accent: 'oklch(64% 0.18 245)', icon: 'Calendar',     activeWorkflows: 3 },
-  { id: 'slack',     name: 'Slack',           category: 'communication', status: 'connected', accent: 'oklch(72% 0.18 320)', icon: 'Slack',        activeWorkflows: 5 },
-  { id: 'hubspot',   name: 'HubSpot',         category: 'crm',           status: 'syncing',   accent: 'oklch(72% 0.18 40)',  icon: 'Users',        activeWorkflows: 2 },
-  { id: 'notion',    name: 'Notion',          category: 'productivity',  status: 'connected', accent: 'oklch(50% 0.04 280)', icon: 'FileText',     activeWorkflows: 2 },
-  { id: 'stripe',    name: 'Stripe',          category: 'finance',       status: 'connected', accent: 'oklch(62% 0.22 280)', icon: 'CreditCard',   activeWorkflows: 1 },
-  { id: 'linear',    name: 'Linear',          category: 'engineering',   status: 'connected', accent: 'oklch(60% 0.18 270)', icon: 'GitBranch',    activeWorkflows: 2 },
-  { id: 'github',    name: 'GitHub',          category: 'engineering',   status: 'connected', accent: 'oklch(40% 0.02 280)', icon: 'Github',       activeWorkflows: 1 },
-  { id: 'openai',    name: 'OpenAI',          category: 'ai',            status: 'connected', accent: 'oklch(64% 0.16 160)', icon: 'Sparkles',     activeWorkflows: 3 },
-  { id: 'claude',    name: 'Claude',          category: 'ai',            status: 'connected', accent: 'oklch(70% 0.16 50)',  icon: 'Brain',        activeWorkflows: 4 },
+  { id: 'gmail',     name: 'Gmail',           category: 'communication', status: 'connected', accent: 'oklch(70% 0.16 25)',  icon: 'Gmail',          activeWorkflows: 4 },
+  { id: 'gcal',      name: 'Google Calendar', category: 'productivity',  status: 'connected', accent: 'oklch(64% 0.18 245)', icon: 'GoogleCalendar', activeWorkflows: 3 },
+  { id: 'slack',     name: 'Slack',           category: 'communication', status: 'connected', accent: 'oklch(72% 0.18 320)', icon: 'Slack',          activeWorkflows: 5 },
+  { id: 'hubspot',   name: 'HubSpot',         category: 'crm',           status: 'syncing',   accent: 'oklch(72% 0.18 40)',  icon: 'HubSpot',        activeWorkflows: 2 },
+  { id: 'notion',    name: 'Notion',          category: 'productivity',  status: 'connected', accent: 'oklch(50% 0.04 280)', icon: 'Notion',         activeWorkflows: 2 },
+  { id: 'stripe',    name: 'Stripe',          category: 'finance',       status: 'connected', accent: 'oklch(62% 0.22 280)', icon: 'Stripe',         activeWorkflows: 1 },
+  { id: 'linear',    name: 'Linear',          category: 'engineering',   status: 'connected', accent: 'oklch(60% 0.18 270)', icon: 'Linear',         activeWorkflows: 2 },
+  { id: 'github',    name: 'GitHub',          category: 'engineering',   status: 'connected', accent: 'oklch(40% 0.02 280)', icon: 'Github',         activeWorkflows: 1 },
+  { id: 'openai',    name: 'OpenAI',          category: 'ai',            status: 'connected', accent: 'oklch(64% 0.16 160)', icon: 'OpenAI',         activeWorkflows: 3 },
+  { id: 'claude',    name: 'Claude',          category: 'ai',            status: 'connected', accent: 'oklch(70% 0.16 50)',  icon: 'Claude',         activeWorkflows: 4 },
 ]
 
 export const integrationsById: Record<string, NexusIntegration> = Object.fromEntries(

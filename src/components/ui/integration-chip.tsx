@@ -22,8 +22,7 @@ export function IntegrationChip({ id, size = 'md', showLabel = false, className 
   if (!integration) return null
   const dims = sizes[size]
   const icon = createElement(getNexusIcon(integration.icon), {
-    className: cn(dims.icon, 'text-white drop-shadow-[0_1px_1px_oklch(0%_0_0_/_0.25)]'),
-    strokeWidth: 2.2,
+    className: dims.icon,
   })
 
   return (
@@ -36,12 +35,11 @@ export function IntegrationChip({ id, size = 'md', showLabel = false, className 
     >
       <span
         className={cn(
-          'relative inline-flex items-center justify-center rounded-full shrink-0',
+          'relative inline-flex items-center justify-center rounded-full shrink-0 bg-white',
           dims.wrap,
         )}
         style={{
-          background: `linear-gradient(135deg, ${integration.accent}, oklch(98% 0.01 280))`,
-          boxShadow: `0 0 0 1px oklch(100% 0 0 / 0.6) inset, 0 2px 6px ${integration.accent.replace(')', ' / 0.25)')}`,
+          boxShadow: `0 0 0 1px oklch(100% 0 0 / 0.9) inset, 0 0 0 1px ${integration.accent.replace(')', ' / 0.18)')}, 0 2px 6px ${integration.accent.replace(')', ' / 0.22)')}`,
         }}
         title={integration.name}
       >

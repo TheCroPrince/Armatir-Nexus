@@ -147,10 +147,10 @@ export function ActivityFeed({
                     {integration && Icon && (
                       <div className="mt-1 flex items-center gap-1.5">
                         <span
-                          className="inline-flex h-3.5 w-3.5 items-center justify-center rounded-sm"
-                          style={{ background: integration.accent }}
+                          className="inline-flex h-4 w-4 items-center justify-center rounded-sm bg-white"
+                          style={{ boxShadow: `0 0 0 1px ${integration.accent.replace(')', ' / 0.22)')}` }}
                         >
-                          <Icon className="h-2 w-2 text-white" strokeWidth={2.4} />
+                          <Icon className="h-2.5 w-2.5" />
                         </span>
                         <span className="text-[10.5px] text-[var(--color-ink-faint)]">{integration.name}</span>
                       </div>

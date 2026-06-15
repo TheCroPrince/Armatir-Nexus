@@ -15,7 +15,7 @@ export function ArmatirMark({ className }: ArmatirMarkProps) {
       alt="Armatir"
       width={32}
       height={32}
-      className={cn('select-none', className)}
+      className={cn('select-none object-contain', className)}
       draggable={false}
     />
   )
