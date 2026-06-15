@@ -3,7 +3,7 @@ import { useSearchParams } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Plus, Search, Clock, Activity as ActivityIcon, ChevronRight, Play, Pause, MoreHorizontal } from 'lucide-react'
 import { integrationsById, nexusWorkflows } from '@/data/nexus'
-import { StatusPill } from '@/components/ui/status-pill'
+import { WorkflowStatusText } from '@/components/ui/status-pill'
 import { IntegrationCluster, IntegrationChip } from '@/components/ui/integration-chip'
 import { Sparkline } from '@/components/ui/sparkline'
 import type { NexusWorkflow } from '@/types/nexus'
@@ -147,7 +147,7 @@ export function WorkflowsPage() {
                       <span className="line-clamp-1 text-[13px] font-medium text-[var(--color-ink)]">
                         {w.name}
                       </span>
-                      <StatusPill status={w.status} pulse className="shrink-0" />
+                      <WorkflowStatusText status={w.status} className="shrink-0" />
                     </div>
                     <p className="line-clamp-1 text-[11.5px] text-[var(--color-ink-faint)]">
                       {w.impact}
@@ -229,7 +229,7 @@ function DetailHeader({
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex flex-col gap-2">
           <div className="flex flex-wrap items-center gap-2">
-            <StatusPill status={workflow.status} pulse />
+            <WorkflowStatusText status={workflow.status} />
             <span className="chip rounded-full px-2 py-0.5 text-[10.5px] capitalize text-[var(--color-ink-soft)]">
               {workflow.category}
             </span>
