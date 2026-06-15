@@ -35,3 +35,18 @@ export function StatusPill({ status, className, pulse = false }: StatusPillProps
     </span>
   )
 }
+
+interface WorkflowStatusTextProps {
+  status: WorkflowStatus
+  className?: string
+}
+
+// Text-only status — same semantic colours as StatusPill, but no capsule,
+// border, dot, background, or animation. Reads like a clean table column.
+export function WorkflowStatusText({ status, className }: WorkflowStatusTextProps) {
+  return (
+    <span className={cn('text-[12.5px] font-medium', colourMap[status].text, className)}>
+      {label[status]}
+    </span>
+  )
+}

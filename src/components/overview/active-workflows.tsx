@@ -2,7 +2,7 @@ import { motion } from 'framer-motion'
 import { Link } from 'react-router-dom'
 import { ArrowUpRight, Clock, EyeOff } from 'lucide-react'
 import { nexusWorkflows } from '@/data/nexus'
-import { StatusPill } from '@/components/ui/status-pill'
+import { WorkflowStatusText } from '@/components/ui/status-pill'
 import { IntegrationCluster } from '@/components/ui/integration-chip'
 import { cn } from '@/lib/cn'
 import { useNexusSettings } from '@/lib/nexus-settings'
@@ -51,7 +51,7 @@ export function ActiveWorkflows() {
                   'hover:bg-white/70',
                 )}
               >
-                <StatusPill status={w.status} pulse className="shrink-0" />
+                <WorkflowStatusText status={w.status} className="w-[58px] shrink-0" />
 
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
